@@ -1,47 +1,811 @@
 {
-  "request_1": {
-    "description": "Strong gas smell in the basement near the water heater. Started about 20 minutes ago and getting stronger. Making my wife and kids feel dizzy and nauseous. We evacuated to the neighbors house. Can smell it from outside now. Please send someone IMMEDIATELY this is dangerous!"
-  },
-  "request_2": {
-    "description": "URGENT - outlet in bedroom is sparking and smoking. Flipped the breaker but can still smell burning. The wall around the outlet is hot to touch. I have a 6 month old baby sleeping in the next room. I'm really worried about fire risk."
-  },
-  "request_3": {
-    "description": "Toilet in bathroom overflowed and won't stop. Water is spreading into the hallway and bedroom. I tried plunging it but makes it worse. Been going for 30 minutes now and I can't get it to stop. The carpet is completely soaked. My mom lives here and she's 82 years old so we need this fixed today please."
-  },
-  "request_4": {
-    "description": "Heater stopped working completely. No warm air coming out at all. It's 28 degrees outside and getting colder tonight. We have a space heater but it's not enough for the whole apartment. My daughter has asthma and needs to stay warm. Can you send someone today?"
-  },
-  "request_5": {
-    "description": "Kitchen sink has been leaking under the cabinet for about 2 weeks now. It's a slow drip but constant. I put a bucket under it but have to empty it every day. The bottom of the cabinet is starting to look warped and swollen from the water. Worried it will get worse if not fixed soon."
-  },
-  "request_6": {
-    "description": "There's a crack in the bathroom tile near the shower. It's not leaking or anything but looks bad. Also the grout is starting to come off in a few spots. Been like this for a couple months but just reporting it now. Not urgent but would be nice to get fixed when someone has time."
-  },
-  "request_7": {
-    "description": "Something is wrong with the dishwasher. It runs but the dishes don't come out clean. Also there's some water on the floor after each cycle but I'm not sure if it's from the dishwasher or just splashing. Should I keep using it or stop? Is this an emergency?"
-  },
-  "request_8": {
-    "description": "Minor electrical issue - one of the outlets in the bedroom isn't working. I plugged in my phone charger and nothing happened. Also noticed a slight buzzing sound coming from the outlet. Is this normal?"
-  },
-  "request_9": {
-    "description": "EMERGENCY!!! Cabinet door is hanging off the hinge and looks terrible. I have guests coming this weekend and this is embarrassing. Need fixed ASAP before Friday!!!"
-  },
-  "request_10": {
-    "description": "Kitchen faucet is dripping again. This is the THIRD time I've reported this in 2 months. Last repair guy said he fixed it but it started dripping again after a week. Really frustrated that this keeps happening."
-  },
-  "request_11": {
-    "description": "Several things: bathroom light flickering, fridge making loud noise, and front door lock is sticking. The lock is the most annoying because sometimes I can't get in. Everything else is just annoying."
-  },
-  "request_12": {
-    "description": "Every time it rains, water comes in through the window in the living room. It's supposed to rain this weekend so wanted to report before it happens again. It's not raining now so no leak currently but will be soon."
-  },
-  "request_13": {
-    "description": "Small gas smell near the stove. It's very faint and I'm not sure if I'm imagining it. Goes away when I open the window. Not feeling sick or anything. Should I be worried?"
-  },
-  "request_14": {
-    "description": "AC stopped working. It's 105 degrees outside today. I'm 76 years old and have heart problems. Getting very hot in here and I'm starting to feel lightheaded. Please help as soon as possible."
-  },
-  "request_15": {
-    "description": "Water heater making really loud banging noises when it turns on. Sounds like someone is hitting it with a hammer. It's 15 years old. Still getting hot water but the noise is scary. Winter is coming and don't want it to break."
-  }
-}
+  "test_cases": [
+    {
+      "test_id": "TC001_EMERGENCY_GAS_LEAK",
+      "request": {
+        "request_id": "req-001",
+        "description": "Strong gas smell in the basement near the water heater. Started about 20 minutes ago and getting stronger. Making my wife and kids feel dizzy and nauseous. We evacuated to the neighbors house. Can smell it from outside now. Please send someone IMMEDIATELY this is dangerous!",
+        "category": "HVAC",
+        "images": [],
+        "reported_at": "2024-12-09T23:30:00Z",
+        "channel": "MOBILE"
+      },
+      "context": {
+        "weather": {
+          "temperature": 28,
+          "condition": "clear",
+          "forecast": "Clear overnight, low 25F",
+          "alerts": ["Winter Weather Advisory"]
+        },
+        "tenant": {
+          "age": 35,
+          "is_elderly": false,
+          "has_infant": true,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 4,
+          "tenure_months": 18
+        },
+        "property": {
+          "type": "Single Family Home",
+          "age": 22,
+          "floor": null,
+          "total_units": 1,
+          "has_elevator": false
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": null,
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": null
+        },
+        "similar_cases": [],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 23,
+          "is_after_hours": true,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": true
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nStrong gas smell in the basement near the water heater. Started about 20 minutes ago and getting stronger. Making my wife and kids feel dizzy and nauseous. We evacuated to the neighbors house. Can smell it from outside now. Please send someone IMMEDIATELY this is dangerous!\n\n**Category:** HVAC\n\n**Property Context:**\n- Property Type: Single Family Home\n- Building: 1 units, 22 years old\n- Unit: N/A\n\n**Time Context:**\n- Reported: 11:30 PM Monday, December 09, 2024\n- Time Category: AFTER HOURS (WEEKDAY)\n- LATE NIGHT (10pm-6am)\n\n**Seasonal/Weather Context:**\n- clear, 28F [ALERTS: Winter Weather Advisory]\n\n**Tenant Context:**\n- Vulnerability: infant in household (<2 years)\n- Occupancy: 4 people\n- Tenure: 18 months\n\n**Historical Context:**\n- No recent history for this issue\n\n**Similar Past Cases:**\nNo similar cases found\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC002_EMERGENCY_ELECTRICAL_FIRE",
+      "request": {
+        "request_id": "req-002",
+        "description": "URGENT - outlet in bedroom is sparking and smoking. Flipped the breaker but can still smell burning. The wall around the outlet is hot to touch. I have a 6 month old baby sleeping in the next room. I'm really worried about fire risk.",
+        "category": "ELECTRICAL",
+        "images": ["img_001.jpg", "img_002.jpg"],
+        "reported_at": "2024-12-09T22:15:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 42,
+          "condition": "partly cloudy",
+          "forecast": "Partly cloudy through tomorrow",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 29,
+          "is_elderly": false,
+          "has_infant": true,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 3,
+          "tenure_months": 8
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 45,
+          "floor": 3,
+          "total_units": 48,
+          "has_elevator": true
+        },
+        "history": {
+          "recent_issues_count": 1,
+          "last_repair_date": "2024-11-15",
+          "recurring_category": "ELECTRICAL",
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 36
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-789",
+            "similarity_score": 0.87,
+            "severity": "EMERGENCY",
+            "resolution_time_hours": 2,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 22,
+          "is_after_hours": true,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": true
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nURGENT - outlet in bedroom is sparking and smoking. Flipped the breaker but can still smell burning. The wall around the outlet is hot to touch. I have a 6 month old baby sleeping in the next room. I'm really worried about fire risk.\n\n**Category:** ELECTRICAL\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 48 units, 45 years old\n- Unit: Floor 3\n\n**Time Context:**\n- Reported: 10:15 PM Monday, December 09, 2024\n- Time Category: AFTER HOURS (WEEKDAY)\n- LATE NIGHT (10pm-6am)\n\n**Seasonal/Weather Context:**\n- partly cloudy, 42F\n\n**Tenant Context:**\n- Vulnerability: infant in household (<2 years)\n- Occupancy: 3 people\n- Tenure: 8 months\n\n**Historical Context:**\n- 1 similar issues in past 60 days\n\n**Similar Past Cases:**\n- Case #case-789: EMERGENCY (similarity: 87%), resolved in 2 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC003_HIGH_TOILET_OVERFLOW",
+      "request": {
+        "request_id": "req-003",
+        "description": "Toilet in bathroom overflowed and won't stop. Water is spreading into the hallway and bedroom. I tried plunging it but makes it worse. Been going for 30 minutes now and I can't get it to stop. The carpet is completely soaked. My mom lives here and she's 82 years old so we need this fixed today please.",
+        "category": "PLUMBING",
+        "images": ["img_003.jpg", "img_004.jpg"],
+        "reported_at": "2024-12-07T22:00:00Z",
+        "channel": "MOBILE"
+      },
+      "context": {
+        "weather": {
+          "temperature": 55,
+          "condition": "clear",
+          "forecast": "Clear and mild",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 82,
+          "is_elderly": true,
+          "has_infant": false,
+          "has_medical_condition": true,
+          "is_pregnant": false,
+          "occupant_count": 1,
+          "tenure_months": 36
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 18,
+          "floor": 2,
+          "total_units": 24,
+          "has_elevator": false
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": "2024-09-12",
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 48
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-456",
+            "similarity_score": 0.92,
+            "severity": "HIGH",
+            "resolution_time_hours": 4,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Saturday",
+          "hour": 22,
+          "is_after_hours": true,
+          "is_weekend": true,
+          "is_holiday": false,
+          "is_late_night": true
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nToilet in bathroom overflowed and won't stop. Water is spreading into the hallway and bedroom. I tried plunging it but makes it worse. Been going for 30 minutes now and I can't get it to stop. The carpet is completely soaked. My mom lives here and she's 82 years old so we need this fixed today please.\n\n**Category:** PLUMBING\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 24 units, 18 years old\n- Unit: Floor 2\n\n**Time Context:**\n- Reported: 10:00 PM Saturday, December 07, 2024\n- Time Category: AFTER HOURS (WEEKEND)\n- LATE NIGHT (10pm-6am)\n\n**Seasonal/Weather Context:**\n- clear, 55F\n\n**Tenant Context:**\n- Vulnerability: elderly tenant (75+), tenant with medical condition\n- Occupancy: 1 people\n- Tenure: 36 months\n\n**Historical Context:**\n- No recent similar issues\n\n**Similar Past Cases:**\n- Case #case-456: HIGH (similarity: 92%), resolved in 4 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC004_HIGH_NO_HEAT_WINTER",
+      "request": {
+        "request_id": "req-004",
+        "description": "Heater stopped working completely. No warm air coming out at all. It's 28 degrees outside and getting colder tonight. We have a space heater but it's not enough for the whole apartment. My daughter has asthma and needs to stay warm. Can you send someone today?",
+        "category": "HVAC",
+        "images": [],
+        "reported_at": "2024-12-09T14:30:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 28,
+          "condition": "snow",
+          "forecast": "Heavy snow tonight, low 22F",
+          "alerts": ["Winter Storm Warning"]
+        },
+        "tenant": {
+          "age": 38,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": true,
+          "is_pregnant": false,
+          "occupant_count": 3,
+          "tenure_months": 24
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 32,
+          "floor": 4,
+          "total_units": 60,
+          "has_elevator": true
+        },
+        "history": {
+          "recent_issues_count": 1,
+          "last_repair_date": "2024-11-20",
+          "recurring_category": "HVAC",
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 24
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-234",
+            "similarity_score": 0.88,
+            "severity": "HIGH",
+            "resolution_time_hours": 6,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 14,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nHeater stopped working completely. No warm air coming out at all. It's 28 degrees outside and getting colder tonight. We have a space heater but it's not enough for the whole apartment. My daughter has asthma and needs to stay warm. Can you send someone today?\n\n**Category:** HVAC\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 60 units, 32 years old\n- Unit: Floor 4\n\n**Time Context:**\n- Reported: 02:30 PM Monday, December 09, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- snow, 28F [ALERTS: Winter Storm Warning]\n\n**Tenant Context:**\n- Vulnerability: tenant with medical condition\n- Occupancy: 3 people\n- Tenure: 24 months\n\n**Historical Context:**\n- 1 similar issues in past 60 days\n\n**Similar Past Cases:**\n- Case #case-234: HIGH (similarity: 88%), resolved in 6 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC005_MEDIUM_PERSISTENT_LEAK",
+      "request": {
+        "request_id": "req-005",
+        "description": "Kitchen sink has been leaking under the cabinet for about 2 weeks now. It's a slow drip but constant. I put a bucket under it but have to empty it every day. The bottom of the cabinet is starting to look warped and swollen from the water. Worried it will get worse if not fixed soon.",
+        "category": "PLUMBING",
+        "images": ["img_005.jpg"],
+        "reported_at": "2024-12-09T10:15:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 48,
+          "condition": "overcast",
+          "forecast": "Cloudy with possible rain",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 45,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 2,
+          "tenure_months": 42
+        },
+        "property": {
+          "type": "Condo",
+          "age": 15,
+          "floor": 1,
+          "total_units": 12,
+          "has_elevator": false
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": "2024-06-10",
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 72
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-567",
+            "similarity_score": 0.91,
+            "severity": "MEDIUM",
+            "resolution_time_hours": 48,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 10,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nKitchen sink has been leaking under the cabinet for about 2 weeks now. It's a slow drip but constant. I put a bucket under it but have to empty it every day. The bottom of the cabinet is starting to look warped and swollen from the water. Worried it will get worse if not fixed soon.\n\n**Category:** PLUMBING\n\n**Property Context:**\n- Property Type: Condo\n- Building: 12 units, 15 years old\n- Unit: Floor 1\n\n**Time Context:**\n- Reported: 10:15 AM Monday, December 09, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- overcast, 48F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 2 people\n- Tenure: 42 months\n\n**Historical Context:**\n- No recent history for this issue\n\n**Similar Past Cases:**\n- Case #case-567: MEDIUM (similarity: 91%), resolved in 48 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC006_LOW_COSMETIC_TILE",
+      "request": {
+        "request_id": "req-006",
+        "description": "There's a crack in the bathroom tile near the shower. It's not leaking or anything but looks bad. Also the grout is starting to come off in a few spots. Been like this for a couple months but just reporting it now. Not urgent but would be nice to get fixed when someone has time.",
+        "category": "GENERAL",
+        "images": ["img_006.jpg"],
+        "reported_at": "2024-12-09T16:45:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 52,
+          "condition": "sunny",
+          "forecast": "Sunny and pleasant",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 31,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 1,
+          "tenure_months": 15
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 8,
+          "floor": 2,
+          "total_units": 36,
+          "has_elevator": true
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": "2024-07-22",
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 120
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-890",
+            "similarity_score": 0.85,
+            "severity": "LOW",
+            "resolution_time_hours": 168,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 16,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nThere's a crack in the bathroom tile near the shower. It's not leaking or anything but looks bad. Also the grout is starting to come off in a few spots. Been like this for a couple months but just reporting it now. Not urgent but would be nice to get fixed when someone has time.\n\n**Category:** GENERAL\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 36 units, 8 years old\n- Unit: Floor 2\n\n**Time Context:**\n- Reported: 04:45 PM Monday, December 09, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- sunny, 52F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 1 people\n- Tenure: 15 months\n\n**Historical Context:**\n- No recent history for this issue\n\n**Similar Past Cases:**\n- Case #case-890: LOW (similarity: 85%), resolved in 168 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC007_MEDIUM_AMBIGUOUS_DISHWASHER",
+      "request": {
+        "request_id": "req-007",
+        "description": "Something is wrong with the dishwasher. It runs but the dishes don't come out clean. Also there's some water on the floor after each cycle but I'm not sure if it's from the dishwasher or just splashing. Should I keep using it or stop? Is this an emergency?",
+        "category": "APPLIANCE",
+        "images": [],
+        "reported_at": "2024-12-09T18:20:00Z",
+        "channel": "MOBILE"
+      },
+      "context": {
+        "weather": {
+          "temperature": 44,
+          "condition": "light rain",
+          "forecast": "Rain continuing through evening",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 27,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 2,
+          "tenure_months": 6
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 12,
+          "floor": 3,
+          "total_units": 48,
+          "has_elevator": true
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": null,
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": null
+        },
+        "similar_cases": [],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 18,
+          "is_after_hours": true,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nSomething is wrong with the dishwasher. It runs but the dishes don't come out clean. Also there's some water on the floor after each cycle but I'm not sure if it's from the dishwasher or just splashing. Should I keep using it or stop? Is this an emergency?\n\n**Category:** APPLIANCE\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 48 units, 12 years old\n- Unit: Floor 3\n\n**Time Context:**\n- Reported: 06:20 PM Monday, December 09, 2024\n- Time Category: AFTER HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- light rain, 44F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 2 people\n- Tenure: 6 months\n\n**Historical Context:**\n- No recent history for this issue\n\n**Similar Past Cases:**\nNo similar cases found\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC008_MEDIUM_BUZZING_OUTLET",
+      "request": {
+        "request_id": "req-008",
+        "description": "Minor electrical issue - one of the outlets in the bedroom isn't working. I plugged in my phone charger and nothing happened. Also noticed a slight buzzing sound coming from the outlet. Is this normal?",
+        "category": "ELECTRICAL",
+        "images": [],
+        "reported_at": "2024-12-09T19:30:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 38,
+          "condition": "clear",
+          "forecast": "Clear and cold",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 24,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 1,
+          "tenure_months": 3
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 55,
+          "floor": 1,
+          "total_units": 16,
+          "has_elevator": false
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": null,
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": null
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-112",
+            "similarity_score": 0.78,
+            "severity": "MEDIUM",
+            "resolution_time_hours": 36,
+            "was_accurate": false
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 19,
+          "is_after_hours": true,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nMinor electrical issue - one of the outlets in the bedroom isn't working. I plugged in my phone charger and nothing happened. Also noticed a slight buzzing sound coming from the outlet. Is this normal?\n\n**Category:** ELECTRICAL\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 16 units, 55 years old\n- Unit: Floor 1\n\n**Time Context:**\n- Reported: 07:30 PM Monday, December 09, 2024\n- Time Category: AFTER HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- clear, 38F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 1 people\n- Tenure: 3 months\n\n**Historical Context:**\n- No recent history for this issue\n\n**Similar Past Cases:**\n- Case #case-112: MEDIUM (similarity: 78%), resolved in 36 hours, classification was inaccurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC009_LOW_EMOTION_VS_REALITY",
+      "request": {
+        "request_id": "req-009",
+        "description": "EMERGENCY!!! Cabinet door is hanging off the hinge and looks terrible. I have guests coming this weekend and this is embarrassing. Need fixed ASAP before Friday!!!",
+        "category": "GENERAL",
+        "images": ["img_009.jpg"],
+        "reported_at": "2024-12-09T13:00:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 58,
+          "condition": "sunny",
+          "forecast": "Sunny and pleasant",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 33,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 2,
+          "tenure_months": 9
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 6,
+          "floor": 4,
+          "total_units": 80,
+          "has_elevator": true
+        },
+        "history": {
+          "recent_issues_count": 1,
+          "last_repair_date": "2024-10-15",
+          "recurring_category": "GENERAL",
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 96
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-445",
+            "similarity_score": 0.94,
+            "severity": "LOW",
+            "resolution_time_hours": 120,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 13,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nEMERGENCY!!! Cabinet door is hanging off the hinge and looks terrible. I have guests coming this weekend and this is embarrassing. Need fixed ASAP before Friday!!!\n\n**Category:** GENERAL\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 80 units, 6 years old\n- Unit: Floor 4\n\n**Time Context:**\n- Reported: 01:00 PM Monday, December 09, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- sunny, 58F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 2 people\n- Tenure: 9 months\n\n**Historical Context:**\n- 1 similar issues in past 60 days\n\n**Similar Past Cases:**\n- Case #case-445: LOW (similarity: 94%), resolved in 120 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC010_MEDIUM_RECURRING_FAUCET",
+      "request": {
+        "request_id": "req-010",
+        "description": "Kitchen faucet is dripping again. This is the THIRD time I've reported this in 2 months. Last repair guy said he fixed it but it started dripping again after a week. Really frustrated that this keeps happening.",
+        "category": "PLUMBING",
+        "images": [],
+        "reported_at": "2024-12-09T09:30:00Z",
+        "channel": "MOBILE"
+      },
+      "context": {
+        "weather": {
+          "temperature": 46,
+          "condition": "overcast",
+          "forecast": "Cloudy all day",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 41,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 3,
+          "tenure_months": 28
+        },
+        "property": {
+          "type": "Townhouse",
+          "age": 20,
+          "floor": null,
+          "total_units": 8,
+          "has_elevator": false
+        },
+        "history": {
+          "recent_issues_count": 2,
+          "last_repair_date": "2024-12-01",
+          "recurring_category": "PLUMBING",
+          "previous_repair_failed": true,
+          "avg_resolution_time_hours": 48
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-678",
+            "similarity_score": 0.96,
+            "severity": "MEDIUM",
+            "resolution_time_hours": 24,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 9,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nKitchen faucet is dripping again. This is the THIRD time I've reported this in 2 months. Last repair guy said he fixed it but it started dripping again after a week. Really frustrated that this keeps happening.\n\n**Category:** PLUMBING\n\n**Property Context:**\n- Property Type: Townhouse\n- Building: 8 units, 20 years old\n- Unit: N/A\n\n**Time Context:**\n- Reported: 09:30 AM Monday, December 09, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- overcast, 46F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 3 people\n- Tenure: 28 months\n\n**Historical Context:**\n- 2 similar issues in past 60 days; Previous repair attempt FAILED\n\n**Similar Past Cases:**\n- Case #case-678: MEDIUM (similarity: 96%), resolved in 24 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC011_MEDIUM_MULTIPLE_ISSUES",
+      "request": {
+        "request_id": "req-011",
+        "description": "Several things: bathroom light flickering, fridge making loud noise, and front door lock is sticking. The lock is the most annoying because sometimes I can't get in. Everything else is just annoying.",
+        "category": "GENERAL",
+        "images": [],
+        "reported_at": "2024-12-09T11:45:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 50,
+          "condition": "partly cloudy",
+          "forecast": "Partly cloudy",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 36,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 1,
+          "tenure_months": 20
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 28,
+          "floor": 2,
+          "total_units": 32,
+          "has_elevator": false
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": "2024-08-14",
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 60
+        },
+        "similar_cases": [],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 11,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nSeveral things: bathroom light flickering, fridge making loud noise, and front door lock is sticking. The lock is the most annoying because sometimes I can't get in. Everything else is just annoying.\n\n**Category:** GENERAL\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 32 units, 28 years old\n- Unit: Floor 2\n\n**Time Context:**\n- Reported: 11:45 AM Monday, December 09, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- partly cloudy, 50F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 1 people\n- Tenure: 20 months\n\n**Historical Context:**\n- No recent history for this issue\n\n**Similar Past Cases:**\nNo similar cases found\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC012_MEDIUM_PREDICTABLE_LEAK",
+      "request": {
+        "request_id": "req-012",
+        "description": "Every time it rains, water comes in through the window in the living room. It's supposed to rain this weekend so wanted to report before it happens again. It's not raining now so no leak currently but will be soon.",
+        "category": "GENERAL",
+        "images": ["img_012.jpg"],
+        "reported_at": "2024-12-09T15:20:00Z",
+        "channel": "WEB"
+      },
+      "context": {
+        "weather": {
+          "temperature": 54,
+          "condition": "sunny",
+          "forecast": "Rain expected Saturday-Sunday, 0.5-1 inch",
+          "alerts": ["Flood Watch issued for this weekend"]
+        },
+        "tenant": {
+          "age": 52,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 2,
+          "tenure_months": 48
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 38,
+          "floor": 5,
+          "total_units": 72,
+          "has_elevator": true
+        },
+        "history": {
+          "recent_issues_count": 3,
+          "last_repair_date": "2024-10-08",
+          "recurring_category": "GENERAL",
+          "previous_repair_failed": true,
+          "avg_resolution_time_hours": 72
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-990",
+            "similarity_score": 0.89,
+            "severity": "MEDIUM",
+            "resolution_time_hours": 48,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 15,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nEvery time it rains, water comes in through the window in the living room. It's supposed to rain this weekend so wanted to report before it happens again. It's not raining now so no leak currently but will be soon.\n\n**Category:** GENERAL\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 72 units, 38 years old\n- Unit: Floor 5\n\n**Time Context:**\n- Reported: 03:20 PM Monday, December 09, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- sunny, 54F [ALERTS: Flood Watch issued for this weekend]\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 2 people\n- Tenure: 48 months\n\n**Historical Context:**\n- 3 similar issues in past 60 days; Previous repair attempt FAILED\n\n**Similar Past Cases:**\n- Case #case-990: MEDIUM (similarity: 89%), resolved in 48 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC013_EMERGENCY_FAINT_GAS",
+      "request": {
+        "request_id": "req-013",
+        "description": "Small gas smell near the stove. It's very faint and I'm not sure if I'm imagining it. Goes away when I open the window. Not feeling sick or anything. Should I be worried?",
+        "category": "HVAC",
+        "images": [],
+        "reported_at": "2024-12-09T20:45:00Z",
+        "channel": "MOBILE"
+      },
+      "context": {
+        "weather": {
+          "temperature": 35,
+          "condition": "clear",
+          "forecast": "Clear and cold",
+          "alerts": []
+        },
+        "tenant": {
+          "age": 28,
+          "is_elderly": false,
+          "has_infant": false,
+          "has_medical_condition": false,
+          "is_pregnant": false,
+          "occupant_count": 1,
+          "tenure_months": 12
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 42,
+          "floor": 1,
+          "total_units": 20,
+          "has_elevator": false
+        },
+        "history": {
+          "recent_issues_count": 0,
+          "last_repair_date": null,
+          "recurring_category": null,
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": null
+        },
+        "similar_cases": [],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 20,
+          "is_after_hours": true,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nSmall gas smell near the stove. It's very faint and I'm not sure if I'm imagining it. Goes away when I open the window. Not feeling sick or anything. Should I be worried?\n\n**Category:** HVAC\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 20 units, 42 years old\n- Unit: Floor 1\n\n**Time Context:**\n- Reported: 08:45 PM Monday, December 09, 2024\n- Time Category: AFTER HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- clear, 35F\n\n**Tenant Context:**\n- Vulnerability: No vulnerable populations noted\n- Occupancy: 1 people\n- Tenure: 12 months\n\n**Historical Context:**\n- No recent history for this issue\n\n**Similar Past Cases:**\nNo similar cases found\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    },
+    {
+      "test_id": "TC014_EMERGENCY_AC_ELDERLY_HEAT",
+      "request": {
+        "request_id": "req-014",
+        "description": "AC stopped working. It's 105 degrees outside today. I'm 76 years old and have heart problems. Getting very hot in here and I'm starting to feel lightheaded. Please help as soon as possible.",
+        "category": "HVAC",
+        "images": [],
+        "reported_at": "2024-07-15T14:15:00Z",
+        "channel": "MOBILE"
+      },
+      "context": {
+        "weather": {
+          "temperature": 105,
+          "condition": "sunny",
+          "forecast": "Extreme heat continues, high 108F tomorrow",
+          "alerts": ["Excessive Heat Warning"]
+        },
+        "tenant": {
+          "age": 76,
+          "is_elderly": true,
+          "has_infant": false,
+          "has_medical_condition": true,
+          "is_pregnant": false,
+          "occupant_count": 1,
+          "tenure_months": 60
+        },
+        "property": {
+          "type": "Apartment",
+          "age": 25,
+          "floor": 3,
+          "total_units": 44,
+          "has_elevator": true
+        },
+        "history": {
+          "recent_issues_count": 1,
+          "last_repair_date": "2024-06-20",
+          "recurring_category": "HVAC",
+          "previous_repair_failed": false,
+          "avg_resolution_time_hours": 12
+        },
+        "similar_cases": [
+          {
+            "case_id": "case-223",
+            "similarity_score": 0.93,
+            "severity": "EMERGENCY",
+            "resolution_time_hours": 3,
+            "was_accurate": true
+          }
+        ],
+        "timing": {
+          "day_of_week": "Monday",
+          "hour": 14,
+          "is_after_hours": false,
+          "is_weekend": false,
+          "is_holiday": false,
+          "is_late_night": false
+        }
+      },
+      "user_prompt": "MAINTENANCE REQUEST TO CLASSIFY:\n\n**Description:**\nAC stopped working. It's 105 degrees outside today. I'm 76 years old and have heart problems. Getting very hot in here and I'm starting to feel lightheaded. Please help as soon as possible.\n\n**Category:** HVAC\n\n**Property Context:**\n- Property Type: Apartment\n- Building: 44 units, 25 years old\n- Unit: Floor 3\n\n**Time Context:**\n- Reported: 02:15 PM Monday, July 15, 2024\n- Time Category: BUSINESS HOURS (WEEKDAY)\n\n**Seasonal/Weather Context:**\n- sunny, 105F [ALERTS: Excessive Heat Warning]\n\n**Tenant Context:**\n- Vulnerability: elderly tenant (75+), tenant with medical condition\n- Occupancy: 1 people\n- Tenure: 60 months\n\n**Historical Context:**\n- 1 similar issues in past 60 days\n\n**Similar Past Cases:**\n- Case #case-223: EMERGENCY (similarity: 93%), resolved in 3 hours, classification accurate\n\n---\nCLASSIFY THIS REQUEST NOW using chain-of-thought reasoning."
+    }
+  ]
