@@ -1,0 +1,16 @@
+{
+    "description": "Strong gas smell in the basement near the water heater. Started about 20 minutes ago and getting stronger. Making my wife and kids feel dizzy and nauseous. We evacuated to the neighbors house. Can smell it from outside now. Please send someone IMMEDIATELY this is dangerous!"
+}
+
+Final Output:
+{
+  "severity": "EMERGENCY",
+  "trade": "PLUMBING",
+  "reasoning": "Tenant reports a strong and increasing gas odor originating near the water heater with onset ~20 minutes ago, and the smell is now detectable outside. Occupants are symptomatic (dizziness, nausea) and have evacuated, indicating an active gas leak and immediate life-safety risk. This meets the mandatory emergency criteria for any gas odor and requires immediate response from a gas-qualified technician and emergnow detectable outside. Occupants are symptomatic (dizziness, nausea) and have evacuated, indicating an active gas leak and immediate life-safety risk. This meets the mandatory emergency criteria for any gas odor and requires immediate response from a gas-qualified technician and emergency services if onsite.",
+  "confidence": 0.99,
+  "key_factors": [
+    "Strong, increasing gas smell near water heater",
+    "Occupants experiencing dizziness and nausea and have evacuated",
+    "Odor detectable from outside indicating spreading/large leak"
+  ]
+}

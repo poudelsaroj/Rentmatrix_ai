@@ -1,0 +1,16 @@
+{
+    "description": "one of the outlets in the bedroom isn't working. I plugged in my phone charger and nothing happened. Also noticed a slight buzzing sound coming from the outlet."
+}
+
+Final Output:
+{
+  "severity": "EMERGENCY",
+  "trade": "ELECTRICAL",
+  "reasoning": "Bedroom outlet is dead while producing an audible buzzing, which is indicative of a loose connection or electrical arcing. Arcing/loose wiring presents an immediate fire and shock hazard, so this requires an immediate electrical response.",
+  "confidence": 0.90,
+  "key_factors": [
+    "Non-functioning bedroom outlet (loss of power to circuit/fixture)",
+    "Audible buzzing from outlet suggesting loose connection/arcing",
+    "Elevated risk of fire or electrocution — immediate action required"
+  ]
+}

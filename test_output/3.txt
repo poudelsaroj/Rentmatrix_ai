@@ -1,0 +1,17 @@
+{
+    "description": "Kitchen faucet is dripping again. This is the THIRD time I've reported this in 2 months. Last repair guy said he fixed it but it started dripping again after a week. Really frustrated that this keeps happening."
+}
+
+
+Final Output:
+{
+    "severity": "MEDIUM",
+    "trade": "PLUMBING",
+    "reasoning": "This is a persistent, contained kitchen faucet drip reported for the third time in two months indicating a failed repair or defective part rather than an acute safety event. There is no active flooding, electrical involvement, or health/safety risk, so it does not meet HIGH/EMERGENCY criteria, but recurrence warrants prompt diagnostic service and likely part replacement within 24-48 hours.",
+    "confidence": 0.89,
+    "key_factors": [
+        "Recurring leak: 3rd report in 2 months (repeat failure)",
+        "Contained dripping faucet — no active spreading or flooding",
+        "Previous repair failed, likely needs deeper diagnosis or part replacement"
+    ]
+}
