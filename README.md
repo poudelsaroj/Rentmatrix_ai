@@ -47,6 +47,15 @@ An intelligent property maintenance classification system that analyzes maintena
 
 ## Usage
 
+### Run the FastAPI Server (Swagger UI)
+
+```bash
+cd api
+python app.py
+```
+
+Open **http://localhost:8000/docs** in your browser for Swagger UI.
+
 ### Run the demo
 
 ```bash
