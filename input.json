@@ -1,0 +1,47 @@
+{
+  "request_1": {
+    "description": "Strong gas smell in the basement near the water heater. Started about 20 minutes ago and getting stronger. Making my wife and kids feel dizzy and nauseous. We evacuated to the neighbors house. Can smell it from outside now. Please send someone IMMEDIATELY this is dangerous!"
+  },
+  "request_2": {
+    "description": "URGENT - outlet in bedroom is sparking and smoking. Flipped the breaker but can still smell burning. The wall around the outlet is hot to touch. I have a 6 month old baby sleeping in the next room. I'm really worried about fire risk."
+  },
+  "request_3": {
+    "description": "Toilet in bathroom overflowed and won't stop. Water is spreading into the hallway and bedroom. I tried plunging it but makes it worse. Been going for 30 minutes now and I can't get it to stop. The carpet is completely soaked. My mom lives here and she's 82 years old so we need this fixed today please."
+  },
+  "request_4": {
+    "description": "Heater stopped working completely. No warm air coming out at all. It's 28 degrees outside and getting colder tonight. We have a space heater but it's not enough for the whole apartment. My daughter has asthma and needs to stay warm. Can you send someone today?"
+  },
+  "request_5": {
+    "description": "Kitchen sink has been leaking under the cabinet for about 2 weeks now. It's a slow drip but constant. I put a bucket under it but have to empty it every day. The bottom of the cabinet is starting to look warped and swollen from the water. Worried it will get worse if not fixed soon."
+  },
+  "request_6": {
+    "description": "There's a crack in the bathroom tile near the shower. It's not leaking or anything but looks bad. Also the grout is starting to come off in a few spots. Been like this for a couple months but just reporting it now. Not urgent but would be nice to get fixed when someone has time."
+  },
+  "request_7": {
+    "description": "Something is wrong with the dishwasher. It runs but the dishes don't come out clean. Also there's some water on the floor after each cycle but I'm not sure if it's from the dishwasher or just splashing. Should I keep using it or stop? Is this an emergency?"
+  },
+  "request_8": {
+    "description": "Minor electrical issue - one of the outlets in the bedroom isn't working. I plugged in my phone charger and nothing happened. Also noticed a slight buzzing sound coming from the outlet. Is this normal?"
+  },
+  "request_9": {
+    "description": "EMERGENCY!!! Cabinet door is hanging off the hinge and looks terrible. I have guests coming this weekend and this is embarrassing. Need fixed ASAP before Friday!!!"
+  },
+  "request_10": {
+    "description": "Kitchen faucet is dripping again. This is the THIRD time I've reported this in 2 months. Last repair guy said he fixed it but it started dripping again after a week. Really frustrated that this keeps happening."
+  },
+  "request_11": {
+    "description": "Several things: bathroom light flickering, fridge making loud noise, and front door lock is sticking. The lock is the most annoying because sometimes I can't get in. Everything else is just annoying."
+  },
+  "request_12": {
+    "description": "Every time it rains, water comes in through the window in the living room. It's supposed to rain this weekend so wanted to report before it happens again. It's not raining now so no leak currently but will be soon."
+  },
+  "request_13": {
+    "description": "Small gas smell near the stove. It's very faint and I'm not sure if I'm imagining it. Goes away when I open the window. Not feeling sick or anything. Should I be worried?"
+  },
+  "request_14": {
+    "description": "AC stopped working. It's 105 degrees outside today. I'm 76 years old and have heart problems. Getting very hot in here and I'm starting to feel lightheaded. Please help as soon as possible."
+  },
+  "request_15": {
+    "description": "Water heater making really loud banging noises when it turns on. Sounds like someone is hitting it with a hammer. It's 15 years old. Still getting hot water but the noise is scary. Winter is coming and don't want it to break."
+  }
+}
