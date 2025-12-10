@@ -7,7 +7,7 @@ import json
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
 
-from ..core_agents import TriageAgent, PriorityAgent
+from ..core_agents import TriageAgent, PriorityAgent, ExplainerAgent
 
 
 @dataclass
@@ -15,14 +15,17 @@ class PipelineResult:
     """Result from the triage pipeline."""
     triage_output: str
     priority_output: str
+    explainer_output: str
     triage_parsed: Optional[Dict[str, Any]] = None
     priority_parsed: Optional[Dict[str, Any]] = None
+    explainer_parsed: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary."""
         return {
             "triage": self.triage_parsed or self.triage_output,
-            "priority": self.priority_parsed or self.priority_output
+            "priority": self.priority_parsed or self.priority_output,
+            "explanation": self.explainer_parsed or self.explainer_output
         }
     
     def to_json(self, indent: int = 2) -> str:
@@ -45,6 +48,7 @@ class TriagePipeline:
         self,
         triage_model: str = "gpt-5-mini",
         priority_model: str = "gpt-5-mini",
+        explainer_model: str = "gpt-5-mini",
         verbose: bool = True
     ):
         """
@@ -53,10 +57,12 @@ class TriagePipeline:
         Args:
             triage_model: Model to use for triage agent.
             priority_model: Model to use for priority agent.
+            explainer_model: Model to use for explainer agent.
             verbose: Whether to print progress messages.
         """
         self.triage_agent = TriageAgent(model=triage_model)
         self.priority_agent = PriorityAgent(model=priority_model)
+        self.explainer_agent = ExplainerAgent(model=explainer_model)
         self.verbose = verbose
     
     def _log(self, message: str) -> None:
@@ -119,17 +125,37 @@ class TriagePipeline:
         
         self._log("\n✅ Agent 2 (Priority Calculator) Output:")
         self._log(priority_output)
+
+        # Step 4: Build prompt for Explainer Agent
+        explainer_prompt = self.explainer_agent.build_prompt(
+            triage_output=triage_output,
+            priority_output=priority_output,
+            original_request=request_prompt,
+        )
+
+        # Step 5: Run Explainer Agent
+        self._log("\n[STEP 3] Running Explainer Agent...")
+        self._log("-" * 40)
+
+        explainer_result = await self.explainer_agent.run(explainer_prompt)
+        explainer_output = explainer_result.final_output
+
+        self._log("\n✅ Agent 3 (Explainer) Output:")
+        self._log(explainer_output)
         
         # Parse outputs
         triage_parsed = self._parse_json_safe(triage_output)
         priority_parsed = self._parse_json_safe(priority_output)
+        explainer_parsed = self._parse_json_safe(explainer_output)
         
         # Create result
         result = PipelineResult(
             triage_output=triage_output,
             priority_output=priority_output,
+            explainer_output=explainer_output,
             triage_parsed=triage_parsed,
-            priority_parsed=priority_parsed
+            priority_parsed=priority_parsed,
+            explainer_parsed=explainer_parsed,
         )
         
         # Print summary
@@ -146,6 +172,9 @@ class TriagePipeline:
             self._log(f"\n📊 Priority Score: {priority_parsed.get('priority_score', 'N/A')}/100")
             self._log(f"📊 Base Score: {priority_parsed.get('base_score', 'N/A')}")
             self._log(f"📊 Total Modifiers: +{priority_parsed.get('total_modifiers', 0)}")
+
+        if explainer_parsed:
+            self._log("\n📝 Explanations ready.")
         
         return result
     

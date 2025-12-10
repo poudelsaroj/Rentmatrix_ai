@@ -17,6 +17,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import uvicorn
 
+from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
+from langfuse import get_client
 # Ensure project root is on path when running via `uvicorn api.app:app` or `python api/app.py`
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -45,6 +47,7 @@ class TriageResponse(BaseModel):
 
     triage: Dict[str, Any]
     priority: Dict[str, Any]
+    explanation: Dict[str, Any]
 
 
 app = FastAPI(
@@ -52,6 +55,15 @@ app = FastAPI(
     description="Maintenance triage and priority scoring via RentMatrix agents.",
     version="1.0.0",
 )
+
+# Instrumentation and Langfuse setup (mirrors agent/main.py behavior)
+OpenAIAgentsInstrumentor().instrument()
+try:
+    _langfuse_client = get_client()
+    if not _langfuse_client.auth_check():  # type: ignore[attr-defined]
+        _langfuse_client = None
+except Exception:
+    _langfuse_client = None
 
 # Single shared pipeline instance to avoid per-request randomness/overhead
 pipeline = TriagePipeline(
@@ -137,6 +149,15 @@ async def run_triage(request: TriageRequest) -> Dict[str, Any]:
         return result.to_dict()
     except Exception as exc:  # pragma: no cover - surfaced via HTTP 500
         raise HTTPException(status_code=500, detail="Pipeline execution failed") from exc
+
+
+@app.on_event("shutdown")
+async def _shutdown_langfuse() -> None:
+    if _langfuse_client:
+        try:
+            _langfuse_client.flush()  # type: ignore[attr-defined]
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
