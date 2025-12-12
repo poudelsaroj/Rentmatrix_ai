@@ -7,7 +7,7 @@ import json
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
 
-from ..core_agents import TriageAgent, PriorityAgent, ExplainerAgent
+from ..core_agents import TriageAgent, PriorityAgent, ExplainerAgent, ConfidenceAgent
 
 
 @dataclass
@@ -16,16 +16,19 @@ class PipelineResult:
     triage_output: str
     priority_output: str
     explainer_output: str
+    confidence_output: str
     triage_parsed: Optional[Dict[str, Any]] = None
     priority_parsed: Optional[Dict[str, Any]] = None
     explainer_parsed: Optional[Dict[str, Any]] = None
+    confidence_parsed: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary."""
         return {
             "triage": self.triage_parsed or self.triage_output,
             "priority": self.priority_parsed or self.priority_output,
-            "explanation": self.explainer_parsed or self.explainer_output
+            "explanation": self.explainer_parsed or self.explainer_output,
+            "confidence": self.confidence_parsed or self.confidence_output
         }
     
     def to_json(self, indent: int = 2) -> str:
@@ -37,7 +40,7 @@ class TriagePipeline:
     """
     Orchestrates the triage pipeline flow:
     
-    Agent 1 (Triage) → Agent 2 (Priority Calculator) → Final Result
+    Agent 1 (Triage) → Agent 2 (Priority) → Agent 3 (Explainer) → Agent 4 (Confidence) → Final Result
     
     Usage:
         pipeline = TriagePipeline()
@@ -49,6 +52,7 @@ class TriagePipeline:
         triage_model: str = "gpt-5-mini",
         priority_model: str = "gpt-5-mini",
         explainer_model: str = "gpt-5-mini",
+        confidence_model: str = "gpt-5-mini",
         verbose: bool = True
     ):
         """
@@ -58,11 +62,13 @@ class TriagePipeline:
             triage_model: Model to use for triage agent.
             priority_model: Model to use for priority agent.
             explainer_model: Model to use for explainer agent.
+            confidence_model: Model to use for confidence agent.
             verbose: Whether to print progress messages.
         """
         self.triage_agent = TriageAgent(model=triage_model)
         self.priority_agent = PriorityAgent(model=priority_model)
         self.explainer_agent = ExplainerAgent(model=explainer_model)
+        self.confidence_agent = ConfidenceAgent(model=confidence_model)
         self.verbose = verbose
     
     def _log(self, message: str) -> None:
@@ -142,20 +148,41 @@ class TriagePipeline:
 
         self._log("\n✅ Agent 3 (Explainer) Output:")
         self._log(explainer_output)
+
+        # Step 6: Build prompt for Confidence Agent
+        confidence_prompt = self.confidence_agent.build_prompt(
+            triage_output=triage_output,
+            priority_output=priority_output,
+            explainer_output=explainer_output,
+            original_request=request_prompt,
+        )
+
+        # Step 7: Run Confidence Agent
+        self._log("\n[STEP 4] Running Confidence Evaluator Agent...")
+        self._log("-" * 40)
+
+        confidence_result = await self.confidence_agent.run(confidence_prompt)
+        confidence_output = confidence_result.final_output
+
+        self._log("\n✅ Agent 4 (Confidence Evaluator) Output:")
+        self._log(confidence_output)
         
         # Parse outputs
         triage_parsed = self._parse_json_safe(triage_output)
         priority_parsed = self._parse_json_safe(priority_output)
         explainer_parsed = self._parse_json_safe(explainer_output)
+        confidence_parsed = self._parse_json_safe(confidence_output)
         
         # Create result
         result = PipelineResult(
             triage_output=triage_output,
             priority_output=priority_output,
             explainer_output=explainer_output,
+            confidence_output=confidence_output,
             triage_parsed=triage_parsed,
             priority_parsed=priority_parsed,
             explainer_parsed=explainer_parsed,
+            confidence_parsed=confidence_parsed,
         )
         
         # Print summary
@@ -166,7 +193,7 @@ class TriagePipeline:
         if triage_parsed:
             self._log(f"\n📋 Severity: {triage_parsed.get('severity', 'N/A')}")
             self._log(f"📋 Trade: {triage_parsed.get('trade', 'N/A')}")
-            self._log(f"📋 Confidence: {triage_parsed.get('confidence', 'N/A')}")
+            self._log(f"📋 Triage Confidence: {triage_parsed.get('confidence', 'N/A')}")
         
         if priority_parsed:
             self._log(f"\n📊 Priority Score: {priority_parsed.get('priority_score', 'N/A')}/100")
@@ -175,6 +202,13 @@ class TriagePipeline:
 
         if explainer_parsed:
             self._log("\n📝 Explanations ready.")
+
+        if confidence_parsed:
+            self._log(f"\n🎯 Overall Confidence: {confidence_parsed.get('confidence', 'N/A')}")
+            self._log(f"🎯 Routing Decision: {confidence_parsed.get('routing', 'N/A')}")
+            risk_flags = confidence_parsed.get('risk_flags', [])
+            if risk_flags:
+                self._log(f"⚠️  Risk Flags: {', '.join(risk_flags)}")
         
         return result
     

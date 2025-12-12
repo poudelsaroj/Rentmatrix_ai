@@ -1,4 +1,4 @@
-"""
+﻿"""
 FastAPI backend exposing the RentMatrix AI triage pipeline via Swagger UI.
 
 The pipeline already lives under `agent/`. We keep a single shared pipeline
@@ -48,11 +48,16 @@ class TriageResponse(BaseModel):
     triage: Dict[str, Any]
     priority: Dict[str, Any]
     explanation: Dict[str, Any]
+    confidence: Dict[str, Any]
 
 
 app = FastAPI(
     title="RentMatrix AI Triage API",
-    description="Maintenance triage and priority scoring via RentMatrix agents.",
+    description=(
+        "Maintenance triage and priority scoring via RentMatrix AI agents. "
+        "Includes 4 specialized agents: Triage Classifier, Priority Calculator, "
+        "Explainer, and Confidence Evaluator."
+    ),
     version="1.0.0",
 )
 
@@ -69,6 +74,7 @@ except Exception:
 pipeline = TriagePipeline(
     triage_model=DEFAULT_AGENT_CONFIG.triage_model,
     priority_model=DEFAULT_AGENT_CONFIG.priority_model,
+    confidence_model="gpt-5-mini",  # Agent 4: Confidence Evaluator
     verbose=False,
 )
 
@@ -135,7 +141,19 @@ async def health() -> Dict[str, str]:
 @app.post("/triage", response_model=TriageResponse)
 async def run_triage(request: TriageRequest) -> Dict[str, Any]:
     """
-    Run the triage pipeline using only the provided description.
+    Run the complete 4-agent triage pipeline using the provided description.
+
+    Pipeline Flow:
+    1. Agent 1 (Triage Classifier): Classifies severity and trade category
+    2. Agent 2 (Priority Calculator): Calculates numerical priority score
+    3. Agent 3 (Explainer): Generates PM and tenant explanations
+    4. Agent 4 (Confidence Evaluator): Assesses confidence and recommends routing
+
+    Returns:
+        - triage: Severity, trade, reasoning, and triage confidence
+        - priority: Priority score (0-100) with applied modifiers
+        - explanation: PM and tenant-facing explanations
+        - confidence: Overall confidence score, routing decision, risk flags
 
     The agent prompts are built inside the pipeline; we supply just the
     description payload to match the existing triage agent contract, while
