@@ -49,14 +49,15 @@ class TriageResponse(BaseModel):
     priority: Dict[str, Any]
     explanation: Dict[str, Any]
     confidence: Dict[str, Any]
+    sla: Dict[str, Any]
 
 
 app = FastAPI(
     title="RentMatrix AI Triage API",
     description=(
         "Maintenance triage and priority scoring via RentMatrix AI agents. "
-        "Includes 4 specialized agents: Triage Classifier, Priority Calculator, "
-        "Explainer, and Confidence Evaluator."
+        "Includes 5 specialized agents: Triage Classifier, Priority Calculator, "
+        "Explainer, Confidence Evaluator, and SLA Mapper."
     ),
     version="1.0.0",
 )
@@ -141,19 +142,21 @@ async def health() -> Dict[str, str]:
 @app.post("/triage", response_model=TriageResponse)
 async def run_triage(request: TriageRequest) -> Dict[str, Any]:
     """
-    Run the complete 4-agent triage pipeline using the provided description.
+    Run the complete 5-agent triage pipeline using the provided description.
 
     Pipeline Flow:
     1. Agent 1 (Triage Classifier): Classifies severity and trade category
     2. Agent 2 (Priority Calculator): Calculates numerical priority score
     3. Agent 3 (Explainer): Generates PM and tenant explanations
     4. Agent 4 (Confidence Evaluator): Assesses confidence and recommends routing
+    5. Agent 5 (SLA Mapper): Maps priority to response/resolution deadlines
 
     Returns:
         - triage: Severity, trade, reasoning, and triage confidence
         - priority: Priority score (0-100) with applied modifiers
         - explanation: PM and tenant-facing explanations
         - confidence: Overall confidence score, routing decision, risk flags
+        - sla: SLA tier, response deadline, resolution deadline, vendor tier
 
     The agent prompts are built inside the pipeline; we supply just the
     description payload to match the existing triage agent contract, while

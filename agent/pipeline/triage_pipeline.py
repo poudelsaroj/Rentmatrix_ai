@@ -6,8 +6,9 @@ Orchestrates the flow of data through multiple agents.
 import json
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
+from datetime import datetime
 
-from ..core_agents import TriageAgent, PriorityAgent, ExplainerAgent, ConfidenceAgent
+from ..core_agents import TriageAgent, PriorityAgent, ExplainerAgent, ConfidenceAgent, SLAMapperAgent, SLAResult
 
 
 @dataclass
@@ -17,6 +18,7 @@ class PipelineResult:
     priority_output: str
     explainer_output: str
     confidence_output: str
+    sla_result: Optional[SLAResult] = None
     triage_parsed: Optional[Dict[str, Any]] = None
     priority_parsed: Optional[Dict[str, Any]] = None
     explainer_parsed: Optional[Dict[str, Any]] = None
@@ -24,12 +26,15 @@ class PipelineResult:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary."""
-        return {
+        result = {
             "triage": self.triage_parsed or self.triage_output,
             "priority": self.priority_parsed or self.priority_output,
             "explanation": self.explainer_parsed or self.explainer_output,
             "confidence": self.confidence_parsed or self.confidence_output
         }
+        if self.sla_result:
+            result["sla"] = self.sla_result.to_dict()
+        return result
     
     def to_json(self, indent: int = 2) -> str:
         """Convert result to JSON string."""
@@ -40,7 +45,7 @@ class TriagePipeline:
     """
     Orchestrates the triage pipeline flow:
     
-    Agent 1 (Triage) → Agent 2 (Priority) → Agent 3 (Explainer) → Agent 4 (Confidence) → Final Result
+    Agent 1 (Triage) → Agent 2 (Priority) → Agent 3 (Explainer) → Agent 4 (Confidence) → Agent 5 (SLA Mapper) → Final Result
     
     Usage:
         pipeline = TriagePipeline()
@@ -69,6 +74,7 @@ class TriagePipeline:
         self.priority_agent = PriorityAgent(model=priority_model)
         self.explainer_agent = ExplainerAgent(model=explainer_model)
         self.confidence_agent = ConfidenceAgent(model=confidence_model)
+        self.sla_mapper = SLAMapperAgent()
         self.verbose = verbose
     
     def _log(self, message: str) -> None:
@@ -92,7 +98,7 @@ class TriagePipeline:
         except json.JSONDecodeError:
             return None
     
-    async def run(self, request_prompt: str) -> PipelineResult:
+    async def run(self, request_prompt: str, submission_time: Optional[datetime] = None) -> PipelineResult:
         """
         Run the full triage pipeline.
         
@@ -173,12 +179,32 @@ class TriagePipeline:
         explainer_parsed = self._parse_json_safe(explainer_output)
         confidence_parsed = self._parse_json_safe(confidence_output)
         
+        # Step 8: Run SLA Mapper (deterministic, no LLM)
+        self._log("\n[STEP 5] Running SLA Mapper Agent...")
+        self._log("-" * 40)
+        
+        sla_result = None
+        if priority_parsed and "priority_score" in priority_parsed and submission_time:
+            priority_score = priority_parsed["priority_score"]
+            sla_result = self.sla_mapper.run(
+                priority_score=priority_score,
+                submission_time=submission_time
+            )
+            
+            self._log("\n✅ Agent 5 (SLA Mapper) Output:")
+            self._log(f"  Tier: {sla_result.tier}")
+            self._log(f"  Response Deadline: {sla_result.response_deadline.strftime('%Y-%m-%d %H:%M:%S')}")
+            self._log(f"  Resolution Deadline: {sla_result.resolution_deadline.strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            self._log("\n⚠️  Agent 5 (SLA Mapper) skipped - priority score or submission time not available")
+        
         # Create result
         result = PipelineResult(
             triage_output=triage_output,
             priority_output=priority_output,
             explainer_output=explainer_output,
             confidence_output=confidence_output,
+            sla_result=sla_result,
             triage_parsed=triage_parsed,
             priority_parsed=priority_parsed,
             explainer_parsed=explainer_parsed,
@@ -210,6 +236,12 @@ class TriagePipeline:
             if risk_flags:
                 self._log(f"⚠️  Risk Flags: {', '.join(risk_flags)}")
         
+        if sla_result:
+            self._log(f"\n⏰ SLA Tier: {sla_result.tier}")
+            self._log(f"⏰ Response Deadline: {sla_result.response_deadline.strftime('%Y-%m-%d %H:%M:%S')}")
+            self._log(f"⏰ Resolution Deadline: {sla_result.resolution_deadline.strftime('%Y-%m-%d %H:%M:%S')}")
+            self._log(f"⏰ Vendor Tier: {sla_result.vendor_tier}")
+        
         return result
     
     async def run_with_data(self, request_data: Dict[str, Any]) -> PipelineResult:
@@ -223,4 +255,15 @@ class TriagePipeline:
             PipelineResult containing outputs from all agents.
         """
         prompt = self.triage_agent.build_prompt(request_data)
-        return await self.run(prompt)
+        
+        # Extract submission time from request data
+        submission_time = None
+        if "request" in request_data and "reported_at" in request_data["request"]:
+            reported_at = request_data["request"]["reported_at"]
+            try:
+                # Parse ISO format timestamp
+                submission_time = datetime.fromisoformat(reported_at.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                pass
+        
+        return await self.run(prompt, submission_time=submission_time)

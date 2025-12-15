@@ -16,13 +16,15 @@ Usage:
     result = await pipeline.run(request_prompt)
 """
 
-from .core_agents import TriageAgent, PriorityAgent
+from .core_agents import TriageAgent, PriorityAgent, SLAMapperAgent, SLAResult
 from .pipeline import TriagePipeline
 from .config import AgentConfig, LangfuseConfig, DEFAULT_AGENT_CONFIG
 
 __all__ = [
     "TriageAgent",
-    "PriorityAgent", 
+    "PriorityAgent",
+    "SLAMapperAgent",
+    "SLAResult",
     "TriagePipeline",
     "AgentConfig",
     "LangfuseConfig",
