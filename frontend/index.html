@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RentMatrix AI Triage Tester</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1021;
+      --panel: #12172b;
+      --card: #161d34;
+      --text: #e8ecf7;
+      --muted: #93a1c6;
+      --accent: #5b8dff;
+      --accent-2: #5df4d7;
+      --danger: #ff6b6b;
+      --warn: #ffb65b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(91, 141, 255, 0.15), transparent 25%),
+                  radial-gradient(circle at 80% 10%, rgba(93, 244, 215, 0.12), transparent 20%),
+                  linear-gradient(135deg, #0a0d1a 0%, #0c1328 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+    }
+    .subtle {
+      color: var(--muted);
+      margin: 6px 0 0;
+      max-width: 800px;
+      line-height: 1.5;
+    }
+    .panel {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    input[type="url"], textarea {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+    input[type="url"]:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(91, 141, 255, 0.7);
+      box-shadow: 0 0 0 4px rgba(91, 141, 255, 0.18);
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 6px;
+    }
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+      color: #0b1021;
+    }
+    button.primary {
+      background: linear-gradient(135deg, #5b8dff, #5df4d7);
+      box-shadow: 0 10px 30px rgba(91, 141, 255, 0.35);
+    }
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    button:not(:disabled):active {
+      transform: translateY(1px);
+    }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.01em;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+    }
+    .pill.severity-high { background: rgba(255, 107, 107, 0.16); color: #ff8b8b; }
+    .pill.severity-medium { background: rgba(255, 182, 91, 0.16); color: #ffc187; }
+    .pill.severity-low { background: rgba(93, 244, 215, 0.12); color: #7df2dc; }
+    .pill.route { background: rgba(91, 141, 255, 0.14); color: #9bc2ff; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      min-height: 180px;
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .muted { color: var(--muted); }
+    ul {
+      margin: 10px 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .kv {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .kv strong { color: var(--text); }
+    .block {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 12px;
+      color: var(--text);
+      line-height: 1.5;
+      margin-top: 8px;
+      white-space: pre-wrap;
+    }
+    .code {
+      background: #0c1223;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #dce5ff;
+      margin-top: 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+    .error {
+      color: #ff9b9b;
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 12px;
+      margin-right: 8px;
+      margin-top: 6px;
+    }
+    @media (max-width: 640px) {
+      body { padding: 18px; }
+      .actions { flex-direction: column; align-items: stretch; }
+      button { width: 100%; text-align: center; }
+      .kv { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>RentMatrix AI — Triage Playground</h1>
+        <p class="subtle">Paste a tenant maintenance description, hit “Run triage”, and inspect the structured output (triage, priority, explanations, confidence, and SLA) returned by the backend.</p>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="form-grid">
+        <div>
+          <label for="api-url">API endpoint</label>
+          <input id="api-url" type="url" value="http://localhost:8000/triage" spellcheck="false">
+        </div>
+        <div>
+          <label for="description">Maintenance description</label>
+          <textarea id="description" placeholder="Example: The heater stopped working this morning. It is about 50°F outside, no unusual smells or sounds, and no elderly tenants here."></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="submit" class="primary">Run triage</button>
+        <button id="sample" class="secondary" type="button">Use sample description</button>
+        <div class="status" id="status">Ready to send a request.</div>
+      </div>
+    </section>
+
+    <div class="grid" id="cards">
+      <div class="card" id="triage-card">
+        <h3>Triage</h3>
+        <div class="muted">Run the triage to see severity, trade, and reasoning.</div>
+      </div>
+      <div class="card" id="priority-card">
+        <h3>Priority</h3>
+        <div class="muted">Priority score with modifiers.</div>
+      </div>
+      <div class="card" id="explanation-card">
+        <h3>Explanations</h3>
+        <div class="muted">PM and tenant-friendly explanations.</div>
+      </div>
+      <div class="card" id="confidence-card">
+        <h3>Confidence & Routing</h3>
+        <div class="muted">Overall confidence, risk flags, and recommendation.</div>
+      </div>
+      <div class="card" id="sla-card">
+        <h3>SLA</h3>
+        <div class="muted">Response and resolution deadlines.</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="status" style="margin-bottom:8px;">Raw response</div>
+      <pre class="code" id="raw-json">{ }</pre>
+    </div>
+  </div>
+
+  <script>
+    const descriptionInput = document.getElementById("description");
+    const apiInput = document.getElementById("api-url");
+    const submitBtn = document.getElementById("submit");
+    const sampleBtn = document.getElementById("sample");
+    const statusEl = document.getElementById("status");
+    const rawEl = document.getElementById("raw-json");
+
+    const triageCard = document.getElementById("triage-card");
+    const priorityCard = document.getElementById("priority-card");
+    const explanationCard = document.getElementById("explanation-card");
+    const confidenceCard = document.getElementById("confidence-card");
+    const slaCard = document.getElementById("sla-card");
+
+    const sampleText = "The heater stopped working this morning. It is about 50°F outside, no unusual smells, no carbon monoxide detector going off. No elderly or infants in the unit.";
+
+    sampleBtn.addEventListener("click", () => {
+      descriptionInput.value = sampleText;
+      descriptionInput.focus();
+      statusEl.textContent = "Sample description loaded.";
+    });
+
+    submitBtn.addEventListener("click", async () => {
+      const description = descriptionInput.value.trim();
+      const apiUrl = apiInput.value.trim() || "http://localhost:8000/triage";
+
+      if (!description) {
+        statusEl.innerHTML = '<span class="error">Please add a description.</span>';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      sampleBtn.disabled = true;
+      statusEl.textContent = "Sending request...";
+
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || "Request failed");
+        }
+
+        renderAll(data);
+        statusEl.textContent = "Success — parsed response below.";
+      } catch (err) {
+        statusEl.innerHTML = '<span class="error">Error: ' + (err?.message || "Request failed") + "</span>";
+      } finally {
+        submitBtn.disabled = false;
+        sampleBtn.disabled = false;
+      }
+    });
+
+    function renderAll(payload) {
+      rawEl.textContent = JSON.stringify(payload, null, 2);
+      renderTriage(payload.triage || {});
+      renderPriority(payload.priority || {});
+      renderExplanation(payload.explanation || {});
+      renderConfidence(payload.confidence || {});
+      renderSla(payload.sla || {});
+    }
+
+    function pill(text, cls = "") {
+      return '<span class="pill ' + cls + '">' + text + "</span>";
+    }
+
+    function list(items) {
+      if (!items || !items.length) return '<div class="muted">None</div>';
+      return "<ul>" + items.map(x => "<li>" + escapeHtml(String(x)) + "</li>").join("") + "</ul>";
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c]));
+    }
+
+    function renderTriage(t) {
+      const severity = (t.severity || "UNKNOWN").toUpperCase();
+      triageCard.innerHTML = `
+        <h3>Triage ${pill(severity, "severity-" + severity.toLowerCase())} ${pill(t.trade || "N/A", "route")}</h3>
+        <div class="block">${escapeHtml(t.reasoning || "—")}</div>
+        <div class="kv" style="margin-top:10px;">
+          <div><strong>Confidence</strong><br><span class="muted">${t.confidence ?? "N/A"}</span></div>
+          <div><strong>Key factors</strong><br></div>
+        </div>
+        ${list(t.key_factors)}
+      `;
+    }
+
+    function renderPriority(p) {
+      const mods = (p.applied_modifiers || []).map(m => {
+        if (typeof m === "object" && m !== null) {
+          const cat = m.category || "Modifier";
+          const pts = m.points ?? "";
+          const reason = m.reason || "";
+          return `${cat}${pts !== "" ? " (+" + pts + ")" : ""}${reason ? ": " + reason : ""}`;
+        }
+        return String(m);
+      });
+
+      priorityCard.innerHTML = `
+        <h3>Priority ${pill("Score " + (p.priority_score ?? "N/A"), "route")}</h3>
+        <div class="kv">
+          <div><strong>Base score</strong><br><span class="muted">${p.base_score ?? "N/A"}</span></div>
+          <div><strong>Total modifiers</strong><br><span class="muted">${p.total_modifiers ?? 0}</span></div>
+          <div><strong>Modifiers applied</strong><br><span class="muted">${mods.length}</span></div>
+          <div><strong>Capped at</strong><br><span class="muted">${p.capped_at ?? "—"}</span></div>
+        </div>
+        ${mods.length ? list(mods) : '<div class="muted" style="margin-top:10px;">No modifiers applied.</div>'}
+      `;
+    }
+
+    function renderExplanation(e) {
+      explanationCard.innerHTML = `
+        <h3>Explanations</h3>
+        <div class="block"><strong>PM:</strong> ${escapeHtml(e.pm_explanation || "—")}</div>
+        <div class="block"><strong>Tenant:</strong> ${escapeHtml(e.tenant_explanation || "—")}</div>
+      `;
+    }
+
+    function renderConfidence(c) {
+      const factors = c.confidence_factors || [];
+      const risks = c.risk_flags || [];
+      confidenceCard.innerHTML = `
+        <h3>Confidence & Routing ${pill((c.routing || "—"), "route")}</h3>
+        <div class="kv">
+          <div><strong>Confidence</strong><br><span class="muted">${c.confidence ?? "N/A"}</span></div>
+          <div><strong>Recommendation</strong><br><span class="muted">${escapeHtml(c.recommendation || "—")}</span></div>
+        </div>
+        <div style="margin-top:10px;"><strong>Risk flags</strong><br>${risks.length ? risks.map(r => '<span class="badge">' + escapeHtml(r) + "</span>").join("") : '<span class="muted">None</span>'}</div>
+        <div style="margin-top:10px;"><strong>Confidence factors</strong>${factors.length ? list(factors.map(f => f.factor + " (" + f.impact + ", " + f.points + "): " + f.reason)) : '<div class="muted">None</div>'}</div>
+      `;
+    }
+
+    function renderSla(s) {
+      slaCard.innerHTML = `
+        <h3>SLA ${pill(s.tier || "—", "route")}</h3>
+        <div class="kv">
+          <div><strong>Response deadline</strong><br><span class="muted">${s.response_deadline || "—"}</span></div>
+          <div><strong>Resolution deadline</strong><br><span class="muted">${s.resolution_deadline || "—"}</span></div>
+          <div><strong>Response hours</strong><br><span class="muted">${s.response_hours ?? "—"}</span></div>
+          <div><strong>Resolution hours</strong><br><span class="muted">${s.resolution_hours ?? "—"}</span></div>
+          <div><strong>Business hours only</strong><br><span class="muted">${s.business_hours_only ? "Yes" : "No"}</span></div>
+          <div><strong>Vendor tier</strong><br><span class="muted">${s.vendor_tier || "—"}</span></div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
+

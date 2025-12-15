@@ -14,6 +14,7 @@ from typing import Any, Dict
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
@@ -60,6 +61,14 @@ app = FastAPI(
         "Explainer, Confidence Evaluator, and SLA Mapper."
     ),
     version="1.0.0",
+)
+
+# Enable wide CORS so the lightweight frontend can call the API locally.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Instrumentation and Langfuse setup (mirrors agent/main.py behavior)
