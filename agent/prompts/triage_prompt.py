@@ -220,7 +220,7 @@ Respond with ONLY valid JSON. No preamble, explanation, or commentary outside JS
 
 {
   "severity": "LOW|MEDIUM|HIGH|EMERGENCY",
-  "trade": "PLUMBING|ELECTRICAL|HVAC|APPLIANCE|GENERAL|STRUCTURAL",
+  "trade": "PLUMBING|ELECTRICAL|HVAC|APPLIANCE|CARPENTRY|PAINTING|FLOORING|ROOFING|MASONRY|PEST_CONTROL|LOCKSMITH|LANDSCAPING|WINDOWS_GLASS|DOORS|DRYWALL|STRUCTURAL|GENERAL",
   "reasoning": "<Chain-of-thought analysis in 2-4 concise sentences. State which step triggered classification.>",
   "confidence": <float 0.0-1.0>,
   "key_factors": [

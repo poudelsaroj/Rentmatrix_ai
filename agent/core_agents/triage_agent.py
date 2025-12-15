@@ -14,7 +14,9 @@ class TriageAgent(BaseAgent):
     
     Classifies maintenance requests into:
     - Severity: EMERGENCY, HIGH, MEDIUM, LOW
-    - Trade: PLUMBING, ELECTRICAL, HVAC, APPLIANCE, GENERAL, STRUCTURAL
+    - Trade: PLUMBING, ELECTRICAL, HVAC, APPLIANCE, CARPENTRY, PAINTING, FLOORING, 
+             ROOFING, MASONRY, PEST_CONTROL, LOCKSMITH, LANDSCAPING, WINDOWS_GLASS, 
+             DOORS, DRYWALL, STRUCTURAL, GENERAL
     
     Also provides reasoning and confidence score.
     """

@@ -83,8 +83,8 @@ except Exception:
 # Single shared pipeline instance to avoid per-request randomness/overhead
 pipeline = TriagePipeline(
     triage_model=DEFAULT_AGENT_CONFIG.triage_model,
-    priority_model=DEFAULT_AGENT_CONFIG.priority_model,
     confidence_model="gpt-5-mini",  # Agent 4: Confidence Evaluator
+    use_deterministic_priority=True,  # Agent 2: Deterministic (instant)
     verbose=False,
 )
 

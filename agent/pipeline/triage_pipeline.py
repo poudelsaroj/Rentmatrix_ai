@@ -8,7 +8,16 @@ from typing import Any, Dict, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
-from ..core_agents import TriageAgent, PriorityAgent, ExplainerAgent, ConfidenceAgent, SLAMapperAgent, SLAResult
+from ..core_agents import (
+    TriageAgent, 
+    PriorityAgent, 
+    ExplainerAgent, 
+    ConfidenceAgent, 
+    SLAMapperAgent, 
+    SLAResult,
+    PriorityCalculatorAgent,
+    PriorityResult
+)
 
 
 @dataclass
@@ -45,7 +54,7 @@ class TriagePipeline:
     """
     Orchestrates the triage pipeline flow:
     
-    Agent 1 (Triage) → Agent 2 (Priority) → Agent 3 (Explainer) → Agent 4 (Confidence) → Agent 5 (SLA Mapper) → Final Result
+    Agent 1 (Triage/LLM) → Agent 2 (Priority/Deterministic) → Agent 3 (Explainer/LLM) → Agent 4 (Confidence/LLM) → Agent 5 (SLA/Deterministic) → Final Result
     
     Usage:
         pipeline = TriagePipeline()
@@ -55,9 +64,9 @@ class TriagePipeline:
     def __init__(
         self,
         triage_model: str = "gpt-5-mini",
-        priority_model: str = "gpt-5-mini",
         explainer_model: str = "gpt-5-mini",
         confidence_model: str = "gpt-5-mini",
+        use_deterministic_priority: bool = True,
         verbose: bool = True
     ):
         """
@@ -65,13 +74,17 @@ class TriagePipeline:
         
         Args:
             triage_model: Model to use for triage agent.
-            priority_model: Model to use for priority agent.
             explainer_model: Model to use for explainer agent.
             confidence_model: Model to use for confidence agent.
+            use_deterministic_priority: Use deterministic priority calculator (faster).
             verbose: Whether to print progress messages.
         """
         self.triage_agent = TriageAgent(model=triage_model)
-        self.priority_agent = PriorityAgent(model=priority_model)
+        self.use_deterministic_priority = use_deterministic_priority
+        if use_deterministic_priority:
+            self.priority_calculator = PriorityCalculatorAgent()
+        else:
+            self.priority_agent = PriorityAgent(model="gpt-5-mini")
         self.explainer_agent = ExplainerAgent(model=explainer_model)
         self.confidence_agent = ConfidenceAgent(model=confidence_model)
         self.sla_mapper = SLAMapperAgent()
@@ -98,12 +111,19 @@ class TriagePipeline:
         except json.JSONDecodeError:
             return None
     
-    async def run(self, request_prompt: str, submission_time: Optional[datetime] = None) -> PipelineResult:
+    async def run(
+        self, 
+        request_prompt: str, 
+        submission_time: Optional[datetime] = None,
+        request_data: Optional[Dict[str, Any]] = None
+    ) -> PipelineResult:
         """
         Run the full triage pipeline.
         
         Args:
             request_prompt: The formatted maintenance request prompt.
+            submission_time: Optional submission time for SLA calculation.
+            request_data: Original request data (required for deterministic priority).
             
         Returns:
             PipelineResult containing outputs from all agents.
@@ -112,8 +132,8 @@ class TriagePipeline:
         self._log("RENTMATRIX AI TRIAGE PIPELINE")
         self._log("=" * 60)
         
-        # Step 1: Run Triage Agent
-        self._log("\n[STEP 1] Running Triage Classifier Agent...")
+        # Step 1: Run Triage Agent (LLM)
+        self._log("\n[STEP 1] Running Triage Classifier Agent (LLM)...")
         self._log("-" * 40)
         
         triage_result = await self.triage_agent.run(request_prompt)
@@ -122,31 +142,45 @@ class TriagePipeline:
         self._log("\n✅ Agent 1 (Triage Classifier) Output:")
         self._log(triage_output)
         
-        # Step 2: Build prompt for Priority Agent
-        priority_prompt = self.priority_agent.build_prompt(
-            triage_output=triage_output,
-            original_request=request_prompt
-        )
+        # Parse triage output for priority calculation
+        triage_parsed = self._parse_json_safe(triage_output)
         
-        # Step 3: Run Priority Agent
+        # Step 2: Run Priority Calculator
         self._log("\n[STEP 2] Running Priority Calculator Agent...")
         self._log("-" * 40)
         
-        priority_result = await self.priority_agent.run(priority_prompt)
-        priority_output = priority_result.final_output
+        if self.use_deterministic_priority and triage_parsed and request_data:
+            # Deterministic calculation (instant)
+            self._log("(Using deterministic calculator - instant)")
+            priority_calc_result = self.priority_calculator.run(
+                triage_output=triage_parsed,
+                request_data=request_data
+            )
+            priority_output = json.dumps(priority_calc_result.to_dict(), indent=2)
+            priority_parsed = priority_calc_result.to_dict()
+        else:
+            # Fallback to LLM-based priority agent
+            self._log("(Using LLM-based calculator)")
+            priority_prompt = self.priority_agent.build_prompt(
+                triage_output=triage_output,
+                original_request=request_prompt
+            )
+            priority_result = await self.priority_agent.run(priority_prompt)
+            priority_output = priority_result.final_output
+            priority_parsed = self._parse_json_safe(priority_output)
         
         self._log("\n✅ Agent 2 (Priority Calculator) Output:")
         self._log(priority_output)
 
-        # Step 4: Build prompt for Explainer Agent
+        # Step 3: Build prompt for Explainer Agent
         explainer_prompt = self.explainer_agent.build_prompt(
             triage_output=triage_output,
             priority_output=priority_output,
             original_request=request_prompt,
         )
 
-        # Step 5: Run Explainer Agent
-        self._log("\n[STEP 3] Running Explainer Agent...")
+        # Step 4: Run Explainer Agent (LLM)
+        self._log("\n[STEP 3] Running Explainer Agent (LLM)...")
         self._log("-" * 40)
 
         explainer_result = await self.explainer_agent.run(explainer_prompt)
@@ -155,7 +189,7 @@ class TriagePipeline:
         self._log("\n✅ Agent 3 (Explainer) Output:")
         self._log(explainer_output)
 
-        # Step 6: Build prompt for Confidence Agent
+        # Step 5: Build prompt for Confidence Agent
         confidence_prompt = self.confidence_agent.build_prompt(
             triage_output=triage_output,
             priority_output=priority_output,
@@ -163,8 +197,8 @@ class TriagePipeline:
             original_request=request_prompt,
         )
 
-        # Step 7: Run Confidence Agent
-        self._log("\n[STEP 4] Running Confidence Evaluator Agent...")
+        # Step 6: Run Confidence Agent (LLM)
+        self._log("\n[STEP 4] Running Confidence Evaluator Agent (LLM)...")
         self._log("-" * 40)
 
         confidence_result = await self.confidence_agent.run(confidence_prompt)
@@ -173,9 +207,7 @@ class TriagePipeline:
         self._log("\n✅ Agent 4 (Confidence Evaluator) Output:")
         self._log(confidence_output)
         
-        # Parse outputs
-        triage_parsed = self._parse_json_safe(triage_output)
-        priority_parsed = self._parse_json_safe(priority_output)
+        # Parse remaining outputs
         explainer_parsed = self._parse_json_safe(explainer_output)
         confidence_parsed = self._parse_json_safe(confidence_output)
         
@@ -266,4 +298,8 @@ class TriagePipeline:
             except (ValueError, AttributeError):
                 pass
         
-        return await self.run(prompt, submission_time=submission_time)
+        return await self.run(
+            prompt, 
+            submission_time=submission_time,
+            request_data=request_data  # Pass for deterministic priority calculator
+        )
