@@ -13,7 +13,7 @@ Classify maintenance requests by severity (EMERGENCY/HIGH/MEDIUM/LOW), assign tr
 The user will provide a prompt in the following form:
 "this is the description of the request: { \"test_id\": \"TC001\", \"request\": { \"request_id\": \"req-001\", \"description\": \"Strong gas smell in the basement near the water heater. Started about 20 minutes ago and getting stronger. Making my wife and kids feel dizzy and nauseous. We evacuated to the neighbors house. Can smell it from outside now. Please send someone IMMEDIATELY this is dangerous!\", \"images\": [], \"reported_at\": \"2024-12-09T23:30:00Z\", \"channel\": \"MOBILE\" }, \"context\": { \"weather\": { \"temperature\": 28, \"condition\": \"clear\", \"forecast\": \"Clear overnight, low 25F\", \"alerts\": [\"Winter Weather Advisory\"] }, \"tenant\": { \"age\": 35, \"is_elderly\": false, \"has_infant\": true, \"has_medical_condition\": false, \"is_pregnant\": false, \"occupant_count\": 4, \"tenure_months\": 18 }, \"property\": { \"type\": \"Single Family Home\", \"age\": 22, \"floor\": null, \"total_units\": 1, \"has_elevator\": false }, \"timing\": { \"day_of_week\": \"Monday\", \"hour\": 23, \"is_after_hours\": true, \"is_weekend\": false, \"is_holiday\": false, \"is_late_night\": true } } }"
 
-# CLASSIFICATION FRAMEWORK
+# CLASSIFICATION FRAMEWORK  
 
 ## EMERGENCY (Score: 85-100)
 Immediate life-safety risk or catastrophic property damage. Requires instant response.

@@ -54,7 +54,7 @@ class TriagePipeline:
     """
     Orchestrates the triage pipeline flow:
     
-    Agent 1 (Triage/LLM) → Agent 2 (Priority/Deterministic) → Agent 3 (Explainer/LLM) → Agent 4 (Confidence/LLM) → Agent 5 (SLA/Deterministic) → Final Result
+    Agent 1 (Triage/LLM) → Agent 2 (Priority/LLM) → Agent 3 (Explainer/LLM) → Agent 4 (Confidence/LLM) → Agent 5 (SLA/Deterministic) → Final Result
     
     Usage:
         pipeline = TriagePipeline()
@@ -64,9 +64,10 @@ class TriagePipeline:
     def __init__(
         self,
         triage_model: str = "gpt-5-mini",
+        priority_model: str = "gpt-5-mini",
         explainer_model: str = "gpt-5-mini",
         confidence_model: str = "gpt-5-mini",
-        use_deterministic_priority: bool = True,
+        use_deterministic_priority: bool = False,
         verbose: bool = True
     ):
         """
@@ -74,9 +75,10 @@ class TriagePipeline:
         
         Args:
             triage_model: Model to use for triage agent.
+            priority_model: Model to use for LLM-based priority agent (ignored if use_deterministic_priority=True).
             explainer_model: Model to use for explainer agent.
             confidence_model: Model to use for confidence agent.
-            use_deterministic_priority: Use deterministic priority calculator (faster).
+            use_deterministic_priority: Use deterministic priority calculator (faster but less intelligent). Default: False (uses LLM).
             verbose: Whether to print progress messages.
         """
         self.triage_agent = TriageAgent(model=triage_model)
@@ -84,7 +86,7 @@ class TriagePipeline:
         if use_deterministic_priority:
             self.priority_calculator = PriorityCalculatorAgent()
         else:
-            self.priority_agent = PriorityAgent(model="gpt-5-mini")
+            self.priority_agent = PriorityAgent(model=priority_model)
         self.explainer_agent = ExplainerAgent(model=explainer_model)
         self.confidence_agent = ConfidenceAgent(model=confidence_model)
         self.sla_mapper = SLAMapperAgent()
@@ -150,8 +152,8 @@ class TriagePipeline:
         self._log("-" * 40)
         
         if self.use_deterministic_priority and triage_parsed and request_data:
-            # Deterministic calculation (instant)
-            self._log("(Using deterministic calculator - instant)")
+            # Deterministic calculation (instant, but less intelligent)
+            self._log("(Using deterministic calculator - fast but less accurate)")
             priority_calc_result = self.priority_calculator.run(
                 triage_output=triage_parsed,
                 request_data=request_data
@@ -159,8 +161,8 @@ class TriagePipeline:
             priority_output = json.dumps(priority_calc_result.to_dict(), indent=2)
             priority_parsed = priority_calc_result.to_dict()
         else:
-            # Fallback to LLM-based priority agent
-            self._log("(Using LLM-based calculator)")
+            # LLM-based priority agent (default, more intelligent)
+            self._log("(Using LLM-based calculator - intelligent priority scoring)")
             priority_prompt = self.priority_agent.build_prompt(
                 triage_output=triage_output,
                 original_request=request_prompt

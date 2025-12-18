@@ -66,7 +66,7 @@
       font-weight: 600;
       margin-bottom: 8px;
     }
-    input[type="url"], textarea {
+    input[type="url"], input[type="text"], textarea {
       width: 100%;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(255, 255, 255, 0.03);
@@ -76,7 +76,7 @@
       font-size: 14px;
       transition: border 0.2s, box-shadow 0.2s;
     }
-    input[type="url"]:focus, textarea:focus {
+    input[type="url"]:focus, input[type="text"]:focus, textarea:focus {
       outline: none;
       border-color: rgba(91, 141, 255, 0.7);
       box-shadow: 0 0 0 4px rgba(91, 141, 255, 0.18);
@@ -89,6 +89,67 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .location-input-wrapper {
+      position: relative;
+      flex: 1;
+    }
+    .location-type-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .toggle-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toggle-btn.active {
+      background: rgba(91, 141, 255, 0.2);
+      border-color: rgba(91, 141, 255, 0.5);
+      color: var(--accent);
+    }
+    .toggle-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+    }
+    .coords-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .coords-inputs input {
+      width: 100%;
+    }
+    .location-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .location-status.success {
+      color: var(--accent-2);
+    }
+    .location-status.error {
+      color: var(--danger);
+    }
+    .location-icon {
+      width: 14px;
+      height: 14px;
     }
     .actions {
       display: flex;
@@ -114,6 +175,23 @@
       background: rgba(255, 255, 255, 0.08);
       color: var(--text);
       border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    button.icon-btn {
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(93, 244, 215, 0.12);
+      border: 1px solid rgba(93, 244, 215, 0.3);
+      color: var(--accent-2);
+    }
+    button.icon-btn:hover:not(:disabled) {
+      background: rgba(93, 244, 215, 0.2);
+      border-color: rgba(93, 244, 215, 0.5);
+    }
+    button.icon-btn svg {
+      width: 20px;
+      height: 20px;
     }
     button:disabled {
       opacity: 0.6;
@@ -142,10 +220,12 @@
       background: rgba(255, 255, 255, 0.06);
       color: var(--text);
     }
+    .pill.severity-emergency { background: rgba(255, 50, 50, 0.2); color: #ff6b6b; }
     .pill.severity-high { background: rgba(255, 107, 107, 0.16); color: #ff8b8b; }
     .pill.severity-medium { background: rgba(255, 182, 91, 0.16); color: #ffc187; }
     .pill.severity-low { background: rgba(93, 244, 215, 0.12); color: #7df2dc; }
     .pill.route { background: rgba(91, 141, 255, 0.14); color: #9bc2ff; }
+    .pill.weather { background: rgba(255, 182, 91, 0.12); color: #ffc187; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -167,6 +247,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
     }
     .muted { color: var(--muted); }
     ul {
@@ -220,11 +301,51 @@
       margin-right: 8px;
       margin-top: 6px;
     }
+    .weather-preview {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+    .weather-preview .temp {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .weather-preview .condition {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .weather-preview .location-name {
+      font-size: 12px;
+      color: var(--accent);
+    }
+    .weather-icon {
+      width: 48px;
+      height: 48px;
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(93, 244, 215, 0.2);
+      border-top-color: var(--accent-2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     @media (max-width: 640px) {
       body { padding: 18px; }
       .actions { flex-direction: column; align-items: stretch; }
       button { width: 100%; text-align: center; }
       .kv { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .coords-inputs { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -233,7 +354,7 @@
     <header>
       <div>
         <h1>RentMatrix AI — Triage Playground</h1>
-        <p class="subtle">Paste a tenant maintenance description, hit “Run triage”, and inspect the structured output (triage, priority, explanations, confidence, and SLA) returned by the backend.</p>
+        <p class="subtle">Paste a tenant maintenance description, optionally add location for weather context, hit "Run triage", and inspect the structured output.</p>
       </div>
     </header>
 
@@ -243,14 +364,67 @@
           <label for="api-url">API endpoint</label>
           <input id="api-url" type="url" value="http://localhost:8000/triage" spellcheck="false">
         </div>
+        
+        <!-- Location Input Section -->
+        <div>
+          <label>Location (optional - for weather context)</label>
+          <div class="location-type-toggle">
+            <button type="button" class="toggle-btn active" id="toggle-text">City / Address</button>
+            <button type="button" class="toggle-btn" id="toggle-coords">Coordinates</button>
+            <button type="button" class="toggle-btn" id="toggle-gps">Use My Location</button>
+          </div>
+          
+          <div id="location-text-input">
+            <input id="location-query" type="text" placeholder="e.g., New York, 10001, Los Angeles CA" spellcheck="false">
+          </div>
+          
+          <div id="location-coords-input" style="display: none;">
+            <div class="coords-inputs">
+              <input id="location-lat" type="text" placeholder="Latitude (e.g., 40.7128)">
+              <input id="location-lon" type="text" placeholder="Longitude (e.g., -74.0060)">
+            </div>
+          </div>
+          
+          <div id="location-status" class="location-status" style="display: none;">
+            <span class="spinner"></span>
+            <span id="location-status-text">Getting your location...</span>
+          </div>
+          
+          <div id="weather-preview" class="weather-preview" style="display: none;">
+            <img id="weather-icon" class="weather-icon" src="" alt="Weather">
+            <div>
+              <div class="temp"><span id="weather-temp">--</span>°F</div>
+              <div class="condition" id="weather-condition">--</div>
+              <div class="location-name" id="weather-location">--</div>
+            </div>
+          </div>
+        </div>
+        
         <div>
           <label for="description">Maintenance description</label>
           <textarea id="description" placeholder="Example: The heater stopped working this morning. It is about 50°F outside, no unusual smells or sounds, and no elderly tenants here."></textarea>
+        </div>
+        
+        <!-- Vendor Matching Section -->
+        <div style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 16px; margin-top: 8px;">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
+            <input type="checkbox" id="include-vendor-matching" style="width: auto;">
+            <span>Include Vendor Matching (Agent 6)</span>
+          </label>
+          
+          <div id="vendor-times-section" style="display: none;">
+            <label style="margin-bottom: 4px;">Tenant Preferred Time Slots (3 slots)</label>
+            <div class="muted" style="font-size: 12px; margin-bottom: 10px;">Format: "Day HH:MM-HH:MM" (e.g., "Monday 09:00-12:00")</div>
+            <input id="time-slot-1" type="text" placeholder="Slot 1: e.g., Monday 09:00-12:00" style="margin-bottom: 8px;">
+            <input id="time-slot-2" type="text" placeholder="Slot 2: e.g., Wednesday 14:00-17:00" style="margin-bottom: 8px;">
+            <input id="time-slot-3" type="text" placeholder="Slot 3: e.g., Friday 10:00-15:00">
+          </div>
         </div>
       </div>
       <div class="actions">
         <button id="submit" class="primary">Run triage</button>
         <button id="sample" class="secondary" type="button">Use sample description</button>
+        <button id="fetch-weather" class="secondary" type="button">Preview Weather</button>
         <div class="status" id="status">Ready to send a request.</div>
       </div>
     </section>
@@ -276,6 +450,14 @@
         <h3>SLA</h3>
         <div class="muted">Response and resolution deadlines.</div>
       </div>
+      <div class="card" id="weather-card">
+        <h3>Weather Context</h3>
+        <div class="muted">Weather conditions used for triage priority.</div>
+      </div>
+      <div class="card" id="vendor-card" style="display: none; grid-column: 1 / -1;">
+        <h3>Vendor Recommendations 🔧</h3>
+        <div class="muted">Smart vendor matching based on expertise, availability, ratings, and cost.</div>
+      </div>
     </div>
 
     <div class="panel" style="margin-top:18px;">
@@ -285,20 +467,238 @@
   </div>
 
   <script>
+    // DOM Elements
     const descriptionInput = document.getElementById("description");
     const apiInput = document.getElementById("api-url");
     const submitBtn = document.getElementById("submit");
     const sampleBtn = document.getElementById("sample");
+    const fetchWeatherBtn = document.getElementById("fetch-weather");
     const statusEl = document.getElementById("status");
     const rawEl = document.getElementById("raw-json");
 
+    // Location elements
+    const toggleText = document.getElementById("toggle-text");
+    const toggleCoords = document.getElementById("toggle-coords");
+    const toggleGps = document.getElementById("toggle-gps");
+    const locationTextInput = document.getElementById("location-text-input");
+    const locationCoordsInput = document.getElementById("location-coords-input");
+    const locationQuery = document.getElementById("location-query");
+    const locationLat = document.getElementById("location-lat");
+    const locationLon = document.getElementById("location-lon");
+    const locationStatus = document.getElementById("location-status");
+    const locationStatusText = document.getElementById("location-status-text");
+    const weatherPreview = document.getElementById("weather-preview");
+    const weatherIcon = document.getElementById("weather-icon");
+    const weatherTemp = document.getElementById("weather-temp");
+    const weatherCondition = document.getElementById("weather-condition");
+    const weatherLocation = document.getElementById("weather-location");
+
+    // Card elements
     const triageCard = document.getElementById("triage-card");
     const priorityCard = document.getElementById("priority-card");
     const explanationCard = document.getElementById("explanation-card");
     const confidenceCard = document.getElementById("confidence-card");
     const slaCard = document.getElementById("sla-card");
+    const weatherCard = document.getElementById("weather-card");
+    const vendorCard = document.getElementById("vendor-card");
+
+    // Vendor matching elements
+    const includeVendorMatchingCheckbox = document.getElementById("include-vendor-matching");
+    const vendorTimesSection = document.getElementById("vendor-times-section");
+    const timeSlot1 = document.getElementById("time-slot-1");
+    const timeSlot2 = document.getElementById("time-slot-2");
+    const timeSlot3 = document.getElementById("time-slot-3");
 
     const sampleText = "The heater stopped working this morning. It is about 50°F outside, no unusual smells, no carbon monoxide detector going off. No elderly or infants in the unit.";
+
+    // Location mode state
+    let locationMode = "text"; // "text", "coords", or "gps"
+    let currentCoords = null;
+
+    // Toggle location input modes
+    function setLocationMode(mode) {
+      locationMode = mode;
+      
+      // Update toggle button states
+      toggleText.classList.toggle("active", mode === "text");
+      toggleCoords.classList.toggle("active", mode === "coords");
+      toggleGps.classList.toggle("active", mode === "gps");
+      
+      // Show/hide inputs
+      locationTextInput.style.display = mode === "text" ? "block" : "none";
+      locationCoordsInput.style.display = mode === "coords" ? "block" : "none";
+      
+      if (mode === "gps") {
+        requestGeolocation();
+      } else {
+        locationStatus.style.display = "none";
+      }
+    }
+
+    toggleText.addEventListener("click", () => setLocationMode("text"));
+    toggleCoords.addEventListener("click", () => setLocationMode("coords"));
+    toggleGps.addEventListener("click", () => setLocationMode("gps"));
+
+    // Vendor matching toggle
+    includeVendorMatchingCheckbox.addEventListener("change", (e) => {
+      vendorTimesSection.style.display = e.target.checked ? "block" : "none";
+      // Set default time slots when enabled
+      if (e.target.checked && !timeSlot1.value) {
+        timeSlot1.value = "Monday 09:00-12:00";
+        timeSlot2.value = "Wednesday 14:00-17:00";
+        timeSlot3.value = "Friday 10:00-15:00";
+      }
+    });
+
+    // Geolocation
+    function requestGeolocation() {
+      if (!navigator.geolocation) {
+        showLocationStatus("Geolocation is not supported by your browser", "error");
+        return;
+      }
+
+      showLocationStatus("Getting your location...", "loading");
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          currentCoords = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          };
+          locationLat.value = currentCoords.lat.toFixed(6);
+          locationLon.value = currentCoords.lon.toFixed(6);
+          showLocationStatus(`Location found: ${currentCoords.lat.toFixed(4)}, ${currentCoords.lon.toFixed(4)}`, "success");
+          
+          // Auto-fetch weather preview
+          fetchWeatherPreview();
+        },
+        (error) => {
+          let message = "Unable to get location";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              message = "Location permission denied";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              message = "Location unavailable";
+              break;
+            case error.TIMEOUT:
+              message = "Location request timed out";
+              break;
+          }
+          showLocationStatus(message, "error");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function showLocationStatus(message, type) {
+      locationStatus.style.display = "flex";
+      locationStatus.className = "location-status " + type;
+      
+      if (type === "loading") {
+        locationStatusText.innerHTML = '<span class="spinner"></span> ' + message;
+      } else {
+        const icon = type === "success" 
+          ? '<svg class="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
+          : '<svg class="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+        locationStatusText.innerHTML = icon + ' ' + message;
+      }
+    }
+
+    // Get current location data for API
+    function getLocationData() {
+      if (locationMode === "text" && locationQuery.value.trim()) {
+        return { query: locationQuery.value.trim() };
+      } else if ((locationMode === "coords" || locationMode === "gps") && locationLat.value && locationLon.value) {
+        return {
+          latitude: parseFloat(locationLat.value),
+          longitude: parseFloat(locationLon.value)
+        };
+      }
+      return null;
+    }
+
+    // Fetch weather preview
+    async function fetchWeatherPreview() {
+      const location = getLocationData();
+      if (!location) {
+        weatherPreview.style.display = "none";
+        return;
+      }
+
+      const baseUrl = apiInput.value.trim().replace("/triage", "");
+      let url = `${baseUrl}/weather?`;
+      
+      if (location.query) {
+        url += `location=${encodeURIComponent(location.query)}`;
+      } else {
+        url += `lat=${location.latitude}&lon=${location.longitude}`;
+      }
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch weather");
+        
+        const data = await res.json();
+        displayWeatherPreview(data);
+      } catch (err) {
+        console.error("Weather fetch error:", err);
+        weatherPreview.style.display = "none";
+      }
+    }
+
+    function displayWeatherPreview(data) {
+      weatherPreview.style.display = "flex";
+      weatherTemp.textContent = Math.round(data.temperature || 0);
+      weatherCondition.textContent = data.condition || "Unknown";
+      
+      const loc = data.location;
+      if (loc) {
+        weatherLocation.textContent = `${loc.name}${loc.region ? ", " + loc.region : ""}`;
+      } else {
+        weatherLocation.textContent = "Location detected";
+      }
+
+      // WeatherAPI icon URL
+      if (data.condition_code) {
+        // Map condition code to icon (simplified)
+        weatherIcon.src = `https://cdn.weatherapi.com/weather/64x64/${data.is_day ? 'day' : 'night'}/${getWeatherIconCode(data.condition_code)}.png`;
+        weatherIcon.style.display = "block";
+      } else {
+        weatherIcon.style.display = "none";
+      }
+    }
+
+    function getWeatherIconCode(code) {
+      // WeatherAPI condition codes to icon file names
+      const iconMap = {
+        1000: 113, // Sunny/Clear
+        1003: 116, // Partly cloudy
+        1006: 119, // Cloudy
+        1009: 122, // Overcast
+        1030: 143, // Mist
+        1063: 176, // Patchy rain
+        1066: 179, // Patchy snow
+        1087: 200, // Thundery outbreaks
+        1135: 248, // Fog
+        1183: 296, // Light rain
+        1189: 302, // Moderate rain
+        1195: 308, // Heavy rain
+        1213: 326, // Light snow
+        1219: 332, // Moderate snow
+        1225: 338, // Heavy snow
+      };
+      return iconMap[code] || 113;
+    }
+
+    fetchWeatherBtn.addEventListener("click", fetchWeatherPreview);
+
+    // Auto-fetch weather on location input blur
+    locationQuery.addEventListener("blur", () => {
+      if (locationQuery.value.trim()) {
+        fetchWeatherPreview();
+      }
+    });
 
     sampleBtn.addEventListener("click", () => {
       descriptionInput.value = sampleText;
@@ -319,11 +719,32 @@
       sampleBtn.disabled = true;
       statusEl.textContent = "Sending request...";
 
+      // Build request body
+      const requestBody = { description };
+      const location = getLocationData();
+      if (location) {
+        requestBody.location = location;
+      }
+      
+      // Add vendor matching data if enabled
+      if (includeVendorMatchingCheckbox.checked) {
+        requestBody.include_vendor_matching = true;
+        const timeSlots = [
+          timeSlot1.value.trim(),
+          timeSlot2.value.trim(),
+          timeSlot3.value.trim()
+        ].filter(slot => slot.length > 0);
+        
+        if (timeSlots.length > 0) {
+          requestBody.tenant_preferred_times = timeSlots;
+        }
+      }
+
       try {
         const res = await fetch(apiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description })
+          body: JSON.stringify(requestBody)
         });
 
         const data = await res.json();
@@ -348,6 +769,8 @@
       renderExplanation(payload.explanation || {});
       renderConfidence(payload.confidence || {});
       renderSla(payload.sla || {});
+      renderWeather(payload.weather || null);
+      renderVendors(payload.vendors || null);
     }
 
     function pill(text, cls = "") {
@@ -377,25 +800,34 @@
     }
 
     function renderPriority(p) {
-      const mods = (p.applied_modifiers || []).map(m => {
-        if (typeof m === "object" && m !== null) {
-          const cat = m.category || "Modifier";
-          const pts = m.points ?? "";
-          const reason = m.reason || "";
-          return `${cat}${pts !== "" ? " (+" + pts + ")" : ""}${reason ? ": " + reason : ""}`;
+      const factors = (p.applied_factors || []).map(f => {
+        if (typeof f === "object" && f !== null) {
+          const name = f.factor || "Factor";
+          const hr = f.hr ?? "";
+          const reason = f.reason || "";
+          return `${name}${hr !== "" ? " (×" + hr + ")" : ""}${reason ? ": " + reason : ""}`;
         }
-        return String(m);
+        return String(f);
+      });
+
+      const interactions = (p.applied_interactions || []).map(i => {
+        if (typeof i === "object" && i !== null) {
+          return `${i.interaction || "Interaction"}${i.ir ? " (×" + i.ir + ")" : ""}${i.trigger ? ": " + i.trigger : ""}`;
+        }
+        return String(i);
       });
 
       priorityCard.innerHTML = `
-        <h3>Priority ${pill("Score " + (p.priority_score ?? "N/A"), "route")}</h3>
+        <h3>Priority ${pill("Score " + (p.priority_score ?? "N/A"), "route")} ${pill(p.severity || "N/A", "severity-" + (p.severity || "").toLowerCase())}</h3>
         <div class="kv">
-          <div><strong>Base score</strong><br><span class="muted">${p.base_score ?? "N/A"}</span></div>
-          <div><strong>Total modifiers</strong><br><span class="muted">${p.total_modifiers ?? 0}</span></div>
-          <div><strong>Modifiers applied</strong><br><span class="muted">${mods.length}</span></div>
-          <div><strong>Capped at</strong><br><span class="muted">${p.capped_at ?? "—"}</span></div>
+          <div><strong>Base hazard</strong><br><span class="muted">${p.base_hazard ?? "N/A"}</span></div>
+          <div><strong>Combined hazard</strong><br><span class="muted">${p.combined_hazard ?? "N/A"}</span></div>
+          <div><strong>Confidence</strong><br><span class="muted">${p.confidence ?? "N/A"}</span></div>
+          <div><strong>Factors applied</strong><br><span class="muted">${factors.length}</span></div>
         </div>
-        ${mods.length ? list(mods) : '<div class="muted" style="margin-top:10px;">No modifiers applied.</div>'}
+        <div style="margin-top:10px;"><strong>Applied factors</strong>${factors.length ? list(factors) : '<div class="muted">None</div>'}</div>
+        ${interactions.length ? '<div style="margin-top:10px;"><strong>Interactions</strong>' + list(interactions) + '</div>' : ''}
+        ${p.calculation_trace ? '<div style="margin-top:10px;"><strong>Calculation trace</strong><div class="block" style="font-size:12px;">' + escapeHtml(p.calculation_trace) + '</div></div>' : ''}
       `;
     }
 
@@ -434,7 +866,174 @@
         </div>
       `;
     }
+
+    function renderWeather(w) {
+      if (!w) {
+        weatherCard.innerHTML = `
+          <h3>Weather Context</h3>
+          <div class="muted">No location provided — using default weather values.</div>
+        `;
+        return;
+      }
+
+      const urgency = w.urgency_modifiers || {};
+      const urgencyNotes = urgency.weather_urgency_notes || [];
+      const alerts = w.alerts || [];
+      const loc = w.location;
+      
+      let locationStr = "Unknown";
+      if (loc) {
+        locationStr = `${loc.name}${loc.region ? ", " + loc.region : ""}${loc.country ? ", " + loc.country : ""}`;
+      }
+
+      weatherCard.innerHTML = `
+        <h3>Weather Context ${pill(Math.round(w.temperature || 0) + "°F", "weather")} ${pill(w.condition || "—", "route")}</h3>
+        <div class="kv">
+          <div><strong>Location</strong><br><span class="muted">${escapeHtml(locationStr)}</span></div>
+          <div><strong>Feels like</strong><br><span class="muted">${w.feelslike_f ?? "—"}°F</span></div>
+          <div><strong>Humidity</strong><br><span class="muted">${w.humidity ?? "—"}%</span></div>
+          <div><strong>Wind</strong><br><span class="muted">${w.wind_mph ?? "—"} mph ${w.wind_dir || ""}</span></div>
+          <div><strong>UV Index</strong><br><span class="muted">${w.uv ?? "—"}</span></div>
+          <div><strong>Forecast</strong><br><span class="muted">${escapeHtml(w.forecast || "—")}</span></div>
+        </div>
+        ${urgencyNotes.length ? '<div style="margin-top:10px;"><strong>Weather Impact on Priority</strong>' + list(urgencyNotes) + '</div>' : ''}
+        ${alerts.length ? '<div style="margin-top:10px;"><strong>Weather Alerts</strong>' + list(alerts) + '</div>' : ''}
+        <div class="kv" style="margin-top:10px;">
+          <div><strong>Extreme Cold</strong><br><span class="muted">${urgency.is_extreme_cold ? "Yes ⚠️" : "No"}</span></div>
+          <div><strong>Extreme Heat</strong><br><span class="muted">${urgency.is_extreme_heat ? "Yes ⚠️" : "No"}</span></div>
+          <div><strong>Freeze Risk</strong><br><span class="muted">${urgency.freeze_risk ? "Yes ⚠️" : "No"}</span></div>
+          <div><strong>Severe Alerts</strong><br><span class="muted">${urgency.has_severe_alerts ? "Yes ⚠️" : "No"}</span></div>
+        </div>
+      `;
+    }
+
+    function renderVendors(v) {
+      if (!v) {
+        vendorCard.style.display = "none";
+        return;
+      }
+      
+      vendorCard.style.display = "block";
+      
+      if (v.error) {
+        vendorCard.innerHTML = `
+          <h3>Vendor Recommendations ⚠️</h3>
+          <div class="muted" style="color: var(--warn);">Vendor matching failed: ${escapeHtml(v.error)}</div>
+        `;
+        return;
+      }
+      
+      const vendors = v.matched_vendors || [];
+      const summary = v.summary || {};
+      const recommendations = v.recommendations || {};
+      const confidence = v.confidence || 0;
+      
+      if (vendors.length === 0) {
+        vendorCard.innerHTML = `
+          <h3>Vendor Recommendations</h3>
+          <div class="muted">No vendors matched for this request.</div>
+        `;
+        return;
+      }
+      
+      let vendorsHtml = vendors.map((vendor, idx) => {
+        const contact = vendor.contact || {};
+        const cost = vendor.estimated_cost || {};
+        const breakdown = vendor.score_breakdown || {};
+        const strengths = vendor.strengths || [];
+        const considerations = vendor.considerations || [];
+        const matchingSlots = vendor.matching_time_slots || [];
+        
+        const availabilityColor = 
+          vendor.availability_match === "Excellent" ? "#5df4d7" :
+          vendor.availability_match === "Good" ? "#9bc2ff" :
+          vendor.availability_match === "Fair" ? "#ffc187" : "#ff8b8b";
+        
+        return `
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+              <div>
+                <div style="font-size: 18px; font-weight: 600; color: var(--text);">
+                  ${idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : ''}
+                  #${vendor.rank} ${escapeHtml(vendor.company_name || 'Unknown')}
+                </div>
+                <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">
+                  ${escapeHtml(contact.name || '')} | ${escapeHtml(contact.phone || '')}
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 24px; font-weight: 700; color: ${vendor.match_score >= 85 ? '#5df4d7' : vendor.match_score >= 70 ? '#9bc2ff' : '#ffc187'};">
+                  ${vendor.match_score || 0}
+                </div>
+                <div style="font-size: 11px; color: var(--muted);">Match Score</div>
+              </div>
+            </div>
+            
+            <div class="kv" style="margin-bottom: 10px;">
+              <div><strong>Availability</strong><br><span style="color: ${availabilityColor};">${vendor.availability_match || 'N/A'}</span></div>
+              <div><strong>Estimated Cost</strong><br><span class="muted">$${cost.estimated_total_min?.toFixed(2) || '0'} - $${cost.estimated_total_max?.toFixed(2) || '0'}</span></div>
+            </div>
+            
+            ${matchingSlots.length > 0 ? `
+            <div style="margin-bottom: 10px;">
+              <strong style="font-size: 12px;">Matching Time Slots:</strong>
+              <div style="margin-top: 4px;">
+                ${matchingSlots.map(slot => `<span class="badge">${escapeHtml(slot)}</span>`).join('')}
+              </div>
+            </div>
+            ` : ''}
+            
+            <div style="margin-bottom: 10px;">
+              <strong style="font-size: 12px;">Score Breakdown:</strong>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">
+                Expertise: ${breakdown.expertise || 0}/30 | 
+                Availability: ${breakdown.availability || 0}/25 | 
+                Ratings: ${breakdown.ratings || 0}/25 | 
+                Location: ${breakdown.location || 0}/15 | 
+                Cost: ${breakdown.cost || 0}/10 | 
+                Special: ${breakdown.special_factors || 0}/10
+              </div>
+            </div>
+            
+            ${strengths.length > 0 ? `
+            <div style="margin-bottom: 8px;">
+              <strong style="font-size: 12px;">✓ Strengths:</strong>
+              ${strengths.map(s => `<div style="font-size: 12px; color: #5df4d7; margin-top: 3px;">• ${escapeHtml(s)}</div>`).join('')}
+            </div>
+            ` : ''}
+            
+            ${considerations.length > 0 ? `
+            <div style="margin-bottom: 8px;">
+              <strong style="font-size: 12px;">! Considerations:</strong>
+              ${considerations.map(c => `<div style="font-size: 12px; color: #ffc187; margin-top: 3px;">• ${escapeHtml(c)}</div>`).join('')}
+            </div>
+            ` : ''}
+            
+            <div style="background: rgba(91, 141, 255, 0.08); border-radius: 8px; padding: 10px; margin-top: 10px;">
+              <div style="font-size: 12px; line-height: 1.5; color: var(--muted);">
+                ${escapeHtml(vendor.recommendation_reason || '')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      vendorCard.innerHTML = `
+        <h3>Vendor Recommendations 🔧 ${pill('Confidence: ' + (confidence * 100).toFixed(0) + '%', 'route')}</h3>
+        <div class="muted" style="margin-bottom: 12px;">
+          Evaluated ${summary.total_vendors_evaluated || 0} vendors, recommending top ${vendors.length}
+        </div>
+        
+        ${recommendations.primary_choice ? `
+        <div style="background: rgba(93, 244, 215, 0.1); border: 1px solid rgba(93, 244, 215, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+          <div style="font-weight: 600; color: #5df4d7; margin-bottom: 4px;">⭐ Primary Recommendation: ${escapeHtml(recommendations.primary_choice)}</div>
+          <div style="font-size: 13px; color: var(--muted);">${escapeHtml(recommendations.primary_reason || '')}</div>
+        </div>
+        ` : ''}
+        
+        ${vendorsHtml}
+      `;
+    }
   </script>
 </body>
 </html>
-
