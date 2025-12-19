@@ -6,7 +6,7 @@ Demonstrates the full workflow from triage to vendor selection.
 import asyncio
 import json
 from agent.pipeline.triage_pipeline import TriagePipeline
-from agent.core_agents import VendorMatchingAgent
+from agent.core_agents import VendorMatchingAgent, VendorExplainerAgent
 from agent.data import MOCK_VENDORS
 
 
@@ -127,8 +127,7 @@ async def run_complete_demo(request_data: dict, tenant_preferred_times: list, pr
         verbose=False
     )
     
-    request_prompt = format_request_prompt(request_data)
-    result = await pipeline.run(request_prompt, request_data)
+    result = await pipeline.run_with_data(request_data)
     
     # Parse results
     triage_parsed = result.triage_parsed
@@ -177,12 +176,36 @@ async def run_complete_demo(request_data: dict, tenant_preferred_times: list, pr
     print("="*80)
     print()
     
+    vendor_json = None
     try:
         vendor_json = json.loads(vendor_result.final_output)
         display_results(vendor_json)
     except json.JSONDecodeError:
         print("[WARNING] Could not parse vendor matching output:")
         print(vendor_result.final_output)
+    
+    # ========================================================================
+    # STEP 3: Vendor Explainer (Agent 7)
+    # ========================================================================
+    if vendor_json:
+        print()
+        print("[STEP 3] Generating Vendor Explanation (pros/cons & comparisons)...")
+        print("-"*80)
+        explainer_agent = VendorExplainerAgent(model="gpt-5-mini")
+        explainer_prompt = explainer_agent.build_prompt(
+            triage_output=triage_parsed,
+            priority_output=priority_parsed,
+            vendor_match_output=vendor_json,
+            request_data=request_data,
+            tenant_preferred_times=tenant_preferred_times,
+        )
+        explainer_result = await explainer_agent.run(explainer_prompt)
+        try:
+            explainer_json = json.loads(explainer_result.final_output)
+            display_vendor_explanation(explainer_json)
+        except json.JSONDecodeError:
+            print("[WARNING] Could not parse vendor explanation output:")
+            print(explainer_result.final_output)
     
     print()
     print("="*80)
@@ -193,7 +216,8 @@ async def run_complete_demo(request_data: dict, tenant_preferred_times: list, pr
     return {
         "triage": triage_parsed,
         "priority": priority_parsed,
-        "vendors": vendor_json if 'vendor_json' in locals() else None
+        "vendors": vendor_json,
+        "vendor_explainer": explainer_json if 'explainer_json' in locals() else None,
     }
 
 
@@ -235,6 +259,78 @@ def display_results(vendor_json: dict):
         print()
         print(f"BACKUP OPTION: {recommendations.get('backup_choice', 'N/A')}")
         print(f"  → {recommendations.get('backup_reason', 'N/A')}")
+
+
+def display_vendor_explanation(expl_json: dict):
+    """Display pros/cons summary from Vendor Explainer Agent."""
+    summary = expl_json.get("summary", {})
+    vendor_explanations = expl_json.get("vendor_explanations", [])
+    side_by_side = expl_json.get("side_by_side", {})
+    messages = expl_json.get("stakeholder_messages", {})
+
+    print()
+    print("="*80)
+    print("VENDOR EXPLANATION (Pros/Cons & Comparison)")
+    print("="*80)
+    print()
+
+    if summary:
+        print("[Summary]")
+        print(f"  Best Overall: {summary.get('best_overall_vendor_id', 'N/A')} → {summary.get('best_overall_reason', '')}")
+        print(f"  Runner Up:    {summary.get('runner_up_vendor_id', 'N/A')}")
+        print(f"  Budget Pick:  {summary.get('budget_pick_vendor_id', 'N/A')}")
+        print(f"  Fastest:      {summary.get('fastest_response_vendor_id', 'N/A')}")
+        if summary.get("notes"):
+            print(f"  Notes: {summary.get('notes')}")
+        print()
+
+    if vendor_explanations:
+        print("[Vendor Breakdowns]")
+        for vendor in vendor_explanations:
+            print(f"- {vendor.get('company_name', 'Unknown')} (Rank {vendor.get('rank', '?')})")
+            print(f"  Best Fit: {vendor.get('best_fit', 'N/A')}")
+            if vendor.get("pros"):
+                print(f"  Pros: {', '.join(vendor['pros'])}")
+            if vendor.get("cons"):
+                print(f"  Cons: {', '.join(vendor['cons'])}")
+            if vendor.get("availability_notes"):
+                print(f"  Availability: {vendor.get('availability_notes')}")
+            if vendor.get("cost_notes"):
+                print(f"  Cost: {vendor.get('cost_notes')}")
+            if vendor.get("risk_flags"):
+                print(f"  Risks: {', '.join(vendor.get('risk_flags', []))}")
+            print(f"  Take: {vendor.get('overall_take', '')}")
+            print()
+
+    if side_by_side and side_by_side.get("rows"):
+        print("[Side-by-Side Comparison]")
+        columns = side_by_side.get("columns", [])
+        rows = side_by_side.get("rows", [])
+        header = " | ".join(columns) if columns else "vendor_id | rank | match_score | availability | cost_range"
+        print(header)
+        print("-" * len(header))
+        for row in rows:
+            values = [str(row.get(col, "")) for col in columns] if columns else [
+                row.get("vendor_id", ""),
+                row.get("rank", ""),
+                row.get("match_score", ""),
+                row.get("availability", ""),
+                row.get("cost_range", ""),
+            ]
+            print(" | ".join(values))
+        print()
+
+    if messages:
+        pm = messages.get("pm")
+        tenant = messages.get("tenant")
+        if pm:
+            print("[PM Note]")
+            print(pm)
+            print()
+        if tenant:
+            print("[Tenant Note]")
+            print(tenant)
+            print()
 
 
 async def main():
