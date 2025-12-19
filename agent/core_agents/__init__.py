@@ -6,6 +6,7 @@ from .confidence_agent import ConfidenceAgent
 from .sla_mapper_agent import SLAMapperAgent, SLAResult
 from .priority_calculator_agent import PriorityCalculatorAgent, PriorityResult
 from .vendor_matching_agent import VendorMatchingAgent
+from .vendor_explainer_agent import VendorExplainerAgent
 
 __all__ = [
     "TriageAgent",
@@ -16,5 +17,6 @@ __all__ = [
     "SLAResult",
     "PriorityCalculatorAgent",
     "PriorityResult",
-    "VendorMatchingAgent"
+    "VendorMatchingAgent",
+    "VendorExplainerAgent"
 ]
