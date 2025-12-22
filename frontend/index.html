@@ -458,6 +458,10 @@
         <h3>Vendor Recommendations 🔧</h3>
         <div class="muted">Smart vendor matching based on expertise, availability, ratings, and cost.</div>
       </div>
+      <div class="card" id="vendor-explanation-card" style="display: none; grid-column: 1 / -1;">
+        <h3>Vendor Analysis & Comparison 📊</h3>
+        <div class="muted">Detailed comparison of vendors with pros, cons, and recommendations.</div>
+      </div>
     </div>
 
     <div class="panel" style="margin-top:18px;">
@@ -501,6 +505,7 @@
     const slaCard = document.getElementById("sla-card");
     const weatherCard = document.getElementById("weather-card");
     const vendorCard = document.getElementById("vendor-card");
+    const vendorExplanationCard = document.getElementById("vendor-explanation-card");
 
     // Vendor matching elements
     const includeVendorMatchingCheckbox = document.getElementById("include-vendor-matching");
@@ -771,6 +776,7 @@
       renderSla(payload.sla || {});
       renderWeather(payload.weather || null);
       renderVendors(payload.vendors || null);
+      renderVendorExplanation(payload.vendor_explanation || null);
     }
 
     function pill(text, cls = "") {
@@ -783,7 +789,9 @@
     }
 
     function escapeHtml(str) {
-      return str.replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c]));
+      if (str === null || str === undefined) return '';
+      const s = String(str);
+      return s.replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c]));
     }
 
     function renderTriage(t) {
@@ -1032,6 +1040,198 @@
         ` : ''}
         
         ${vendorsHtml}
+      `;
+    }
+
+    function renderVendorExplanation(ve) {
+      if (!ve) {
+        vendorExplanationCard.style.display = "none";
+        return;
+      }
+      
+      vendorExplanationCard.style.display = "block";
+      
+      if (ve.error) {
+        vendorExplanationCard.innerHTML = `
+          <h3>Vendor Analysis & Comparison ⚠️</h3>
+          <div class="muted" style="color: var(--warn);">Analysis failed: ${escapeHtml(ve.error)}</div>
+        `;
+        return;
+      }
+      
+      const summary = ve.summary || {};
+      const explanations = ve.vendor_explanations || [];
+      const sideBySide = ve.side_by_side || {};
+      const messages = ve.stakeholder_messages || {};
+      
+      // Build summary section
+      let summaryHtml = '';
+      if (summary.best_overall_vendor_id) {
+        summaryHtml = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <div style="background: rgba(93, 244, 215, 0.12); border: 1px solid rgba(93, 244, 215, 0.3); border-radius: 10px; padding: 12px;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">🏆 BEST OVERALL</div>
+              <div style="font-weight: 600; color: #5df4d7;">${escapeHtml(summary.best_overall_vendor_id)}</div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">${escapeHtml(summary.best_overall_reason || '')}</div>
+            </div>
+            ${summary.runner_up_vendor_id ? `
+            <div style="background: rgba(91, 141, 255, 0.12); border: 1px solid rgba(91, 141, 255, 0.3); border-radius: 10px; padding: 12px;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">🥈 RUNNER UP</div>
+              <div style="font-weight: 600; color: #9bc2ff;">${escapeHtml(summary.runner_up_vendor_id)}</div>
+            </div>
+            ` : ''}
+            ${summary.budget_pick_vendor_id ? `
+            <div style="background: rgba(255, 182, 91, 0.12); border: 1px solid rgba(255, 182, 91, 0.3); border-radius: 10px; padding: 12px;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">💰 BUDGET PICK</div>
+              <div style="font-weight: 600; color: #ffc187;">${escapeHtml(summary.budget_pick_vendor_id)}</div>
+            </div>
+            ` : ''}
+            ${summary.fastest_response_vendor_id ? `
+            <div style="background: rgba(255, 107, 107, 0.12); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 10px; padding: 12px;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">⚡ FASTEST</div>
+              <div style="font-weight: 600; color: #ff8b8b;">${escapeHtml(summary.fastest_response_vendor_id)}</div>
+            </div>
+            ` : ''}
+          </div>
+        `;
+      }
+      
+      // Build vendor explanations with pros/cons
+      let explanationsHtml = explanations.map((vendor, idx) => {
+        const pros = vendor.pros || [];
+        const cons = vendor.cons || [];
+        const riskFlags = vendor.risk_flags || [];
+        
+        return `
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+              <div>
+                <div style="font-size: 16px; font-weight: 600; color: var(--text);">
+                  ${idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : ''}
+                  #${vendor.rank || idx + 1} ${escapeHtml(vendor.company_name || vendor.vendor_id || 'Unknown')}
+                </div>
+                <div style="font-size: 12px; color: var(--accent); margin-top: 2px;">
+                  Best for: ${escapeHtml(vendor.best_fit || 'General use')}
+                </div>
+              </div>
+              ${vendor.match_score ? `
+              <div style="text-align: right;">
+                <div style="font-size: 20px; font-weight: 700; color: ${vendor.match_score >= 85 ? '#5df4d7' : vendor.match_score >= 70 ? '#9bc2ff' : '#ffc187'};">
+                  ${vendor.match_score}
+                </div>
+                <div style="font-size: 10px; color: var(--muted);">Score</div>
+              </div>
+              ` : ''}
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+              <div>
+                <div style="font-size: 11px; font-weight: 600; color: #5df4d7; margin-bottom: 6px;">✓ PROS</div>
+                ${pros.length > 0 ? pros.map(p => `<div style="font-size: 12px; color: var(--muted); margin-bottom: 3px;">• ${escapeHtml(p)}</div>`).join('') : '<div style="font-size: 12px; color: var(--muted);">None listed</div>'}
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 600; color: #ff8b8b; margin-bottom: 6px;">✗ CONS</div>
+                ${cons.length > 0 ? cons.map(c => `<div style="font-size: 12px; color: var(--muted); margin-bottom: 3px;">• ${escapeHtml(c)}</div>`).join('') : '<div style="font-size: 12px; color: var(--muted);">None listed</div>'}
+              </div>
+            </div>
+            
+            <div class="kv" style="margin-bottom: 10px;">
+              <div><strong style="font-size: 11px;">Availability</strong><br><span class="muted" style="font-size: 12px;">${escapeHtml(vendor.availability_notes || 'N/A')}</span></div>
+              <div><strong style="font-size: 11px;">Cost</strong><br><span class="muted" style="font-size: 12px;">${escapeHtml(vendor.cost_notes || 'N/A')}</span></div>
+            </div>
+            
+            ${riskFlags.length > 0 ? `
+            <div style="margin-bottom: 10px;">
+              <div style="font-size: 11px; font-weight: 600; color: var(--warn); margin-bottom: 4px;">⚠️ Risk Flags</div>
+              ${riskFlags.map(r => `<span class="badge" style="background: rgba(255, 182, 91, 0.15); color: #ffc187;">${escapeHtml(r)}</span>`).join('')}
+            </div>
+            ` : ''}
+            
+            <div style="background: rgba(91, 141, 255, 0.08); border-radius: 8px; padding: 10px;">
+              <div style="font-size: 12px; line-height: 1.5; color: var(--muted);">
+                ${escapeHtml(vendor.overall_take || '')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Build side-by-side comparison table
+      let comparisonHtml = '';
+      if (sideBySide.rows && sideBySide.rows.length > 0) {
+        comparisonHtml = `
+          <div style="margin-top: 16px; overflow-x: auto;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">📋 Side-by-Side Comparison</div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.05);">
+                  <th style="padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">Vendor</th>
+                  <th style="padding: 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">Score</th>
+                  <th style="padding: 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">Availability</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">Cost</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">Best For</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sideBySide.rows.map((row, idx) => `
+                  <tr style="background: ${idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: 500;">
+                      ${escapeHtml(row.vendor_id || '')}
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                      <span style="color: ${(row.match_score || 0) >= 85 ? '#5df4d7' : (row.match_score || 0) >= 70 ? '#9bc2ff' : '#ffc187'}; font-weight: 600;">
+                        ${row.match_score || 'N/A'}
+                      </span>
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                      ${escapeHtml(row.availability || 'N/A')}
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                      ${escapeHtml(row.cost_range || 'N/A')}
+                    </td>
+                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                      ${escapeHtml(row.best_for || 'N/A')}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+      
+      // Build stakeholder messages
+      let messagesHtml = '';
+      if (messages.pm || messages.tenant) {
+        messagesHtml = `
+          <div style="margin-top: 16px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">💬 Stakeholder Messages</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              ${messages.pm ? `
+              <div style="background: rgba(91, 141, 255, 0.1); border: 1px solid rgba(91, 141, 255, 0.3); border-radius: 10px; padding: 12px;">
+                <div style="font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 6px;">📋 FOR PROPERTY MANAGER</div>
+                <div style="font-size: 13px; color: var(--text); line-height: 1.5;">${escapeHtml(messages.pm)}</div>
+              </div>
+              ` : ''}
+              ${messages.tenant ? `
+              <div style="background: rgba(93, 244, 215, 0.1); border: 1px solid rgba(93, 244, 215, 0.3); border-radius: 10px; padding: 12px;">
+                <div style="font-size: 11px; color: #5df4d7; font-weight: 600; margin-bottom: 6px;">🏠 FOR TENANT</div>
+                <div style="font-size: 13px; color: var(--text); line-height: 1.5;">${escapeHtml(messages.tenant)}</div>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }
+      
+      vendorExplanationCard.innerHTML = `
+        <h3>Vendor Analysis & Comparison 📊 ${summary.confidence ? pill('Confidence: ' + escapeHtml(summary.confidence), 'route') : ''}</h3>
+        ${summary.notes ? `<div class="muted" style="margin-bottom: 12px;">${escapeHtml(summary.notes)}</div>` : ''}
+        
+        ${summaryHtml}
+        ${explanationsHtml}
+        ${comparisonHtml}
+        ${messagesHtml}
       `;
     }
   </script>

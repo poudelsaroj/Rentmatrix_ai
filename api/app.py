@@ -36,7 +36,7 @@ if "" not in sys.path:
 load_dotenv()
 
 from agent import DEFAULT_AGENT_CONFIG, TriagePipeline  # noqa: E402
-from agent.core_agents import VendorMatchingAgent  # noqa: E402
+from agent.core_agents import VendorMatchingAgent, VendorExplainerAgent  # noqa: E402
 from agent.data import MOCK_VENDORS  # noqa: E402
 from api.weather_service import get_weather_for_triage, WeatherAPIError  # noqa: E402
 
@@ -102,16 +102,20 @@ class TriageResponse(BaseModel):
         None,
         description="Vendor matching recommendations (if requested and tenant times provided)"
     )
+    vendor_explanation: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Comparative vendor analysis with pros/cons and recommendations (Agent 7)"
+    )
 
 
 app = FastAPI(
     title="RentMatrix AI Triage API",
     description=(
         "Maintenance triage and priority scoring via RentMatrix AI agents. "
-        "Includes 5 specialized agents: Triage Classifier, Priority Calculator, "
-        "Explainer, Confidence Evaluator, and SLA Mapper."
+        "Includes 7 specialized agents: Triage Classifier, Priority Calculator, "
+        "Explainer, Confidence Evaluator, SLA Mapper, Vendor Matching, and Vendor Explainer."
     ),
-    version="1.0.0",
+    version="1.1.0",
 )
 
 # Enable wide CORS so the lightweight frontend can call the API locally.
@@ -141,6 +145,9 @@ pipeline = TriagePipeline(
 
 # Vendor matching agent (Agent 6)
 vendor_agent = VendorMatchingAgent(model="gpt-5-mini", vendors=MOCK_VENDORS)
+
+# Vendor explainer agent (Agent 7)
+vendor_explainer_agent = VendorExplainerAgent(model="gpt-5-mini")
 
 # Predefined request template; description and weather are populated per request.
 DEFAULT_REQUEST_TEMPLATE: Dict[str, Any] = {
@@ -275,7 +282,7 @@ async def get_weather(
 @app.post("/triage", response_model=TriageResponse)
 async def run_triage(request: TriageRequest) -> Dict[str, Any]:
     """
-    Run the complete triage pipeline (5 agents) with optional vendor matching (Agent 6).
+    Run the complete triage pipeline (7 agents) with optional vendor matching and explanation.
 
     Pipeline Flow:
     1. Agent 1 (Triage Classifier): Classifies severity and trade category
@@ -284,6 +291,7 @@ async def run_triage(request: TriageRequest) -> Dict[str, Any]:
     4. Agent 4 (Confidence Evaluator): Assesses confidence and recommends routing
     5. Agent 5 (SLA Mapper): Maps priority to response/resolution deadlines
     6. Agent 6 (Vendor Matching): Matches best vendors (optional)
+    7. Agent 7 (Vendor Explainer): Creates comparative vendor analysis (optional)
 
     Request Body:
         - description: Maintenance issue description (required)
@@ -302,6 +310,7 @@ async def run_triage(request: TriageRequest) -> Dict[str, Any]:
         - sla: SLA tier, response deadline, resolution deadline, vendor tier
         - weather: Weather context used (if location provided)
         - vendors: Vendor recommendations (if requested with tenant times)
+        - vendor_explanation: Comparative vendor analysis with pros/cons (if vendors matched)
 
     The agent prompts are built inside the pipeline; we supply the
     description and weather context while keeping other fields predefined.
@@ -352,11 +361,12 @@ async def run_triage(request: TriageRequest) -> Dict[str, Any]:
                     property_location=location_dict
                 )
                 
-                # Run vendor matching
+                # Run vendor matching (Agent 6)
                 vendor_result = await vendor_agent.run(vendor_prompt)
                 
                 # Parse vendor matching output
                 import json
+                vendor_data = None
                 try:
                     vendor_data = json.loads(vendor_result.final_output)
                     response["vendors"] = vendor_data
@@ -365,6 +375,33 @@ async def run_triage(request: TriageRequest) -> Dict[str, Any]:
                         "error": "Failed to parse vendor matching output",
                         "raw_output": vendor_result.final_output
                     }
+                
+                # Run vendor explainer (Agent 7) if vendor matching succeeded
+                if vendor_data and "matched_vendors" in vendor_data:
+                    try:
+                        explainer_prompt = vendor_explainer_agent.build_prompt(
+                            triage_output=result.triage_parsed or {},
+                            priority_output=result.priority_parsed or {},
+                            vendor_match_output=vendor_data,
+                            request_data=request_payload,
+                            tenant_preferred_times=request.tenant_preferred_times
+                        )
+                        
+                        explainer_result = await vendor_explainer_agent.run(explainer_prompt)
+                        
+                        try:
+                            explanation_data = json.loads(explainer_result.final_output)
+                            response["vendor_explanation"] = explanation_data
+                        except json.JSONDecodeError:
+                            response["vendor_explanation"] = {
+                                "error": "Failed to parse vendor explanation output",
+                                "raw_output": explainer_result.final_output
+                            }
+                    except Exception as explainer_exc:
+                        response["vendor_explanation"] = {
+                            "error": f"Vendor explanation failed: {str(explainer_exc)}"
+                        }
+                        
             except Exception as vendor_exc:
                 response["vendors"] = {
                     "error": f"Vendor matching failed: {str(vendor_exc)}"
