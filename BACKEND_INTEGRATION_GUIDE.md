@@ -3,42 +3,40 @@
 ## API Overview
 
 **Base URL:** `http://localhost:8000`
-**Version:** 1.1.0
+**Version:** 2.0.0
+
+---
+
+## Flow
+
+```
+1. POST /triage          -> AI analyzes issue, returns severity + trade + SLA
+2. PM reviews result
+3. POST /assign-vendors  -> Round-robin assigns 3 vendors (1 primary + 2 backups)
+```
 
 ---
 
 ## Endpoints
 
-### 1. POST `/triage` - Main Triage Endpoint
-
-Runs the 7-agent AI pipeline for maintenance request analysis.
+### 1. POST `/triage` - AI Triage (Agents 1-5)
 
 **Request:**
 ```json
 {
   "description": "Water leaking from ceiling in bathroom",
   "location": {
-    "query": "Boston, MA",
-    "latitude": null,
-    "longitude": null
-  },
-  "tenant_preferred_times": [
-    "Monday 09:00-12:00",
-    "Wednesday 14:00-17:00",
-    "Friday 10:00-15:00"
-  ],
-  "include_vendor_matching": true
+    "query": "Boston, MA"
+  }
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `description` | string | Yes | Maintenance issue description (min 3 chars) |
-| `location.query` | string | No | City name, address, or zipcode |
-| `location.latitude` | float | No | Latitude (-90 to 90) |
-| `location.longitude` | float | No | Longitude (-180 to 180) |
-| `tenant_preferred_times` | string[] | No | 3 preferred time slots for vendor visit |
-| `include_vendor_matching` | bool | No | Enable vendor matching (default: false) |
+| `description` | string | Yes | Issue description (min 3 chars) |
+| `location.query` | string | No | City/address for weather |
+| `location.latitude` | float | No | Lat coordinate |
+| `location.longitude` | float | No | Lon coordinate |
 
 **Response:**
 ```json
@@ -46,226 +44,125 @@ Runs the 7-agent AI pipeline for maintenance request analysis.
   "triage": {
     "severity": "HIGH",
     "trade": "PLUMBING",
-    "reasoning": "Active water leak from ceiling indicates...",
-    "triage_confidence": 0.92
+    "reasoning": "Active water leak..."
   },
   "priority": {
     "priority_score": 78,
-    "applied_modifiers": ["Active water damage", "Potential structural risk"]
+    "applied_modifiers": ["Active water damage"]
   },
   "explanation": {
-    "pm_explanation": "High priority plumbing issue requiring immediate attention...",
-    "tenant_explanation": "We've classified this as urgent. A plumber will contact you within 24 hours..."
+    "pm_explanation": "High priority plumbing issue...",
+    "tenant_explanation": "We've classified this as urgent..."
   },
   "confidence": {
     "confidence_score": 0.89,
-    "routing_decision": "AUTO_APPROVE",
-    "risk_flags": []
+    "routing_decision": "AUTO_APPROVE"
   },
   "sla": {
     "sla_tier": "HIGH",
     "response_deadline": "2024-12-23T12:00:00Z",
-    "resolution_deadline": "2024-12-24T17:00:00Z",
-    "vendor_tier": "PREMIUM"
+    "resolution_deadline": "2024-12-24T17:00:00Z"
   },
-  "weather": {
-    "temperature": 28.5,
-    "condition": "Clear sky",
-    "forecast": "High 32F, Low 25F. Clear",
-    "alerts": []
-  },
-  "vendors": {
-    "matched_vendors": [...],
-    "recommendation_summary": "..."
-  },
-  "vendor_explanation": {
-    "comparison": [...],
-    "final_recommendation": "..."
-  }
+  "weather": { ... }
 }
 ```
 
----
-
-### 2. GET `/weather` - Weather Data
-
-**Query Params:** `location=Boston` OR `lat=42.36&lon=-71.05`
+**Key fields for next step:**
+- `triage.trade` -> Use this for vendor assignment
 
 ---
 
-### 3. GET `/health` - Health Check
+### 2. POST `/assign-vendors` - Vendor Assignment (No LLM)
+
+**Request:**
+```json
+{
+  "trade": "PLUMBING",
+  "tenant_preferred_times": [
+    "Monday 09:00-12:00",
+    "Wednesday 14:00-17:00",
+    "Friday 10:00-15:00"
+  ],
+  "vendors": [
+    {
+      "vendor_id": "V001",
+      "company_name": "QuickFix Plumbing",
+      "primary_trade": "PLUMBING",
+      "phone": "555-0101",
+      "availability": ["Monday 08:00-17:00", "Wednesday 08:00-17:00", "Friday 08:00-17:00"]
+    },
+    {
+      "vendor_id": "V002",
+      "company_name": "FastPipe Services",
+      "primary_trade": "PLUMBING",
+      "phone": "555-0102",
+      "availability": ["Tuesday 09:00-18:00", "Thursday 09:00-18:00"]
+    }
+  ]
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `trade` | string | Yes | Trade from triage response |
+| `tenant_preferred_times` | string[] | Yes | Tenant's 3 preferred time slots |
+| `vendors` | array | Yes | Vendor list with availability |
+
+**Vendor object:**
+```json
+{
+  "vendor_id": "V001",
+  "company_name": "QuickFix",
+  "primary_trade": "PLUMBING",
+  "availability": ["Monday 08:00-17:00", "Wednesday 08:00-17:00"]
+}
+```
+
+**Time slot formats supported:**
+- `"Monday 09:00-12:00"` - Day + time range
+- `"Mon 09:00-12:00"` - Abbreviated day
+- `"2024-12-23 14:00-17:00"` - Specific date
+
+**Response:**
+```json
+{
+  "success": true,
+  "trade": "PLUMBING",
+  "total_available": 2,
+  "tenant_preferred_times": ["Monday 09:00-12:00", "Wednesday 14:00-17:00", "Friday 10:00-15:00"],
+  "assigned_vendors": [
+    {
+      "vendor": { "vendor_id": "V001", "company_name": "QuickFix", ... },
+      "role": "primary",
+      "matched_times": ["Monday 09:00-12:00", "Wednesday 14:00-17:00", "Friday 10:00-15:00"]
+    },
+    {
+      "vendor": { "vendor_id": "V002", "company_name": "FastPipe", ... },
+      "role": "backup",
+      "matched_times": []
+    }
+  ]
+}
+```
+
+**Matching Logic:**
+1. Filters vendors by matching trade
+2. Scores vendors by how many tenant times they can match
+3. Prioritizes vendors with more matching times
+4. Round-robin within same match count
+5. Returns 3 vendors (1 primary + 2 backups)
+
+---
+
+### 3. GET `/weather`
+
+**Query:** `?location=Boston` or `?lat=42.36&lon=-71.05`
+
+---
+
+### 4. GET `/health`
 
 Returns `{"status": "ok"}`
-
----
-
-## Database Requirements
-
-### Tables Needed from Backend
-
-#### 1. `vendors` Table (Currently Mock Data)
-
-```sql
-CREATE TABLE vendors (
-  vendor_id        VARCHAR(20) PRIMARY KEY,  -- "VND-PL-001"
-  company_name     VARCHAR(100) NOT NULL,
-  contact_name     VARCHAR(100),
-  phone            VARCHAR(20),
-  email            VARCHAR(100),
-  tier             ENUM('EMERGENCY','PREMIUM','STANDARD','BUDGET'),
-  is_active        BOOLEAN DEFAULT TRUE,
-  is_verified      BOOLEAN DEFAULT TRUE,
-  insurance_verified BOOLEAN DEFAULT TRUE,
-  license_number   VARCHAR(50),
-  preferred_vendor BOOLEAN DEFAULT FALSE
-);
-```
-
-#### 2. `vendor_locations` Table
-
-```sql
-CREATE TABLE vendor_locations (
-  vendor_id            VARCHAR(20) REFERENCES vendors,
-  address              VARCHAR(200),
-  city                 VARCHAR(100),
-  state                VARCHAR(10),
-  zip_code             VARCHAR(10),
-  latitude             DECIMAL(10,7),
-  longitude            DECIMAL(10,7),
-  service_radius_miles INT DEFAULT 20
-);
-```
-
-#### 3. `vendor_expertise` Table
-
-```sql
-CREATE TABLE vendor_expertise (
-  vendor_id         VARCHAR(20) REFERENCES vendors,
-  primary_trade     ENUM('PLUMBING','ELECTRICAL','HVAC','APPLIANCE','CARPENTRY',
-                         'PAINTING','FLOORING','ROOFING','LOCKSMITH','GENERAL',...),
-  secondary_trades  JSON,           -- ["GENERAL", "CARPENTRY"]
-  specializations   JSON,           -- ["Emergency Repairs", "Gas Lines"]
-  certifications    JSON,           -- ["Master Plumber", "EPA Certified"]
-  years_experience  INT,
-  handles_emergency BOOLEAN DEFAULT FALSE
-);
-```
-
-#### 4. `vendor_ratings` Table
-
-```sql
-CREATE TABLE vendor_ratings (
-  vendor_id                 VARCHAR(20) REFERENCES vendors,
-  overall_rating            DECIMAL(2,1),  -- 4.8
-  total_jobs                INT,
-  completed_jobs            INT,
-  response_time_avg_minutes INT,
-  quality_score             DECIMAL(2,1),
-  reliability_score         DECIMAL(2,1),
-  communication_score       DECIMAL(2,1)
-);
-```
-
-#### 5. `vendor_pricing` Table
-
-```sql
-CREATE TABLE vendor_pricing (
-  vendor_id             VARCHAR(20) REFERENCES vendors,
-  hourly_rate           DECIMAL(10,2),  -- 125.00
-  emergency_multiplier  DECIMAL(3,2) DEFAULT 1.50,
-  weekend_multiplier    DECIMAL(3,2) DEFAULT 1.25,
-  after_hours_multiplier DECIMAL(3,2) DEFAULT 1.30,
-  trip_fee              DECIMAL(10,2) DEFAULT 0.00
-);
-```
-
-#### 6. `vendor_availability` Table
-
-```sql
-CREATE TABLE vendor_availability (
-  vendor_id    VARCHAR(20) REFERENCES vendors,
-  day_of_week  VARCHAR(10),  -- "Monday"
-  start_time   TIME,         -- "09:00"
-  end_time     TIME,         -- "17:00"
-  is_emergency BOOLEAN DEFAULT FALSE
-);
-```
-
----
-
-## API for Vendor Data
-
-The AI system expects vendor data in this format:
-
-```json
-{
-  "vendor_id": "VND-PL-001",
-  "company_name": "QuickFix Plumbing 24/7",
-  "contact_name": "Mike Johnson",
-  "phone": "555-0101",
-  "email": "mike@quickfixplumbing.com",
-  "tier": "EMERGENCY",
-  "location": {
-    "city": "Boston",
-    "state": "MA",
-    "zip_code": "02101",
-    "service_radius_miles": 25
-  },
-  "expertise": {
-    "primary_trade": "PLUMBING",
-    "secondary_trades": ["GENERAL"],
-    "specializations": ["Emergency Repairs", "Gas Lines", "Water Heaters"],
-    "certifications": ["Master Plumber", "Gas Fitting License"],
-    "years_experience": 15,
-    "handles_emergency": true
-  },
-  "rating": {
-    "overall_rating": 4.8,
-    "total_jobs": 342,
-    "completion_rate": 98.8,
-    "response_time_avg_minutes": 25,
-    "quality_score": 4.9,
-    "reliability_score": 4.7,
-    "communication_score": 4.8
-  },
-  "pricing": {
-    "hourly_rate": 125.0,
-    "emergency_multiplier": 1.5,
-    "trip_fee": 50.0
-  },
-  "availability": [
-    "Monday 00:00-23:59 (Emergency Available)",
-    "Tuesday 00:00-23:59 (Emergency Available)"
-  ],
-  "preferred_vendor": true
-}
-```
-
----
-
-## Integration Points
-
-### Option A: Replace Mock Data
-
-Create an API endpoint in your backend:
-
-```
-GET /api/vendors?trade=PLUMBING&city=Boston
-```
-
-Modify `agent/data/mock_vendors.py` to fetch from your API instead.
-
-### Option B: Pass Vendors to API
-
-Extend the `/triage` request to accept vendors:
-
-```json
-{
-  "description": "...",
-  "vendors": [...],
-  "include_vendor_matching": true
-}
-```
 
 ---
 
@@ -273,23 +170,22 @@ Extend the `/triage` request to accept vendors:
 
 | Code | Description |
 |------|-------------|
-| `PLUMBING` | Pipes, drains, water heaters, leaks |
-| `ELECTRICAL` | Wiring, outlets, panels, circuits |
-| `HVAC` | Heating, AC, ventilation, thermostats |
-| `APPLIANCE` | Refrigerators, washers, stoves, dishwashers |
+| `PLUMBING` | Pipes, drains, water heaters |
+| `ELECTRICAL` | Wiring, outlets, panels |
+| `HVAC` | Heating, AC, ventilation |
+| `APPLIANCE` | Refrigerators, washers, stoves |
 | `LOCKSMITH` | Locks, keys, security |
 | `GENERAL` | Handyman, minor repairs |
 | `CARPENTRY` | Wood, doors, cabinets |
-| `PAINTING` | Interior/exterior painting |
-| `ROOFING` | Roof repairs, leaks |
+| `ROOFING` | Roof repairs |
 | `PEST_CONTROL` | Insects, rodents |
 
 ---
 
-## Severity Levels
+## Severity & SLA
 
-| Level | Priority Score | Response Time |
-|-------|---------------|---------------|
+| Severity | Priority Score | Response Time |
+|----------|---------------|---------------|
 | `EMERGENCY` | 80-100 | 4 hours |
 | `HIGH` | 60-79 | 24 hours |
 | `MEDIUM` | 25-59 | 48 hours |
@@ -297,24 +193,111 @@ Extend the `/triage` request to accept vendors:
 
 ---
 
-## Quick Start
+## Database: Vendors Tables
+
+**vendors table:**
+```sql
+CREATE TABLE vendors (
+  vendor_id     VARCHAR(20) PRIMARY KEY,
+  company_name  VARCHAR(100) NOT NULL,
+  primary_trade VARCHAR(20) NOT NULL,  -- PLUMBING, ELECTRICAL, etc.
+  phone         VARCHAR(20),
+  email         VARCHAR(100),
+  is_active     BOOLEAN DEFAULT TRUE
+);
+```
+
+**vendor_availability table:**
+```sql
+CREATE TABLE vendor_availability (
+  vendor_id   VARCHAR(20) REFERENCES vendors,
+  day_of_week VARCHAR(10),  -- Monday, Tuesday, etc.
+  start_time  TIME,         -- 09:00
+  end_time    TIME,         -- 17:00
+  PRIMARY KEY (vendor_id, day_of_week, start_time)
+);
+```
+
+**Format availability for API:**
+```python
+# Convert DB rows to API format
+vendor["availability"] = [
+    f"{row.day_of_week} {row.start_time}-{row.end_time}"
+    for row in vendor_availability_rows
+]
+# Result: ["Monday 09:00-17:00", "Wednesday 09:00-17:00"]
+```
+
+---
+
+## Integration Example
+
+```python
+import requests
+
+# Step 1: Triage
+triage_resp = requests.post("http://localhost:8000/triage", json={
+    "description": "No hot water in apartment"
+})
+triage = triage_resp.json()
+trade = triage["triage"]["trade"]  # e.g., "PLUMBING"
+
+# Step 2: Get vendors from your database
+vendors = get_vendors_from_db(trade)  # Your function
+
+# Step 3: Assign vendors
+assign_resp = requests.post("http://localhost:8000/assign-vendors", json={
+    "trade": trade,
+    "vendors": vendors
+})
+assigned = assign_resp.json()
+
+primary = assigned["assigned_vendors"][0]["vendor"]
+backups = [v["vendor"] for v in assigned["assigned_vendors"][1:]]
+```
+
+---
+
+## Quick Test
 
 ```bash
-# Start the API
+# Start API
 python api/app.py
 
 # Test triage
 curl -X POST http://localhost:8000/triage \
   -H "Content-Type: application/json" \
-  -d '{"description": "No hot water in apartment"}'
+  -d '{"description": "Toilet overflowing"}'
+
+# Test vendor assignment with time matching
+curl -X POST http://localhost:8000/assign-vendors \
+  -H "Content-Type: application/json" \
+  -d '{
+    "trade": "PLUMBING",
+    "tenant_preferred_times": ["Monday 09:00-12:00", "Wednesday 14:00-17:00"],
+    "vendors": [
+      {
+        "vendor_id": "V1",
+        "company_name": "PlumberA",
+        "primary_trade": "PLUMBING",
+        "availability": ["Monday 08:00-17:00", "Wednesday 08:00-17:00"]
+      },
+      {
+        "vendor_id": "V2",
+        "company_name": "PlumberB",
+        "primary_trade": "PLUMBING",
+        "availability": ["Tuesday 09:00-17:00"]
+      }
+    ]
+  }'
 ```
 
 ---
 
-## Environment Variables
+## Environment
 
 ```env
-OPENAI_API_KEY=sk-...      # Required for AI agents
+OPENAI_API_KEY=sk-...   # Required for AI agents
 ```
 
-Weather uses Open-Meteo (free, no key required).
+Weather uses Open-Meteo (free, no API key needed).

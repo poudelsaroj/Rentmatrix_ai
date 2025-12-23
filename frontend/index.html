@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RentMatrix AI Triage Tester</title>
+  <title>RentMatrix AI Triage</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0b1021;
-      --panel: #12172b;
       --card: #161d34;
       --text: #e8ecf7;
       --muted: #93a1c6;
@@ -22,91 +20,111 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Inter", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 20% 20%, rgba(91, 141, 255, 0.15), transparent 25%),
-                  radial-gradient(circle at 80% 10%, rgba(93, 244, 215, 0.12), transparent 20%),
-                  linear-gradient(135deg, #0a0d1a 0%, #0c1328 100%);
+      font-family: "Inter", system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0d1a 0%, #0c1328 100%);
       color: var(--text);
       min-height: 100vh;
-      padding: 32px;
+      padding: 24px;
     }
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    h1 {
-      margin: 0;
-      font-size: 28px;
-      letter-spacing: -0.02em;
-    }
-    .subtle {
-      color: var(--muted);
-      margin: 6px 0 0;
-      max-width: 800px;
-      line-height: 1.5;
-    }
+    .page { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; }
+    h2 { margin: 0 0 16px; font-size: 17px; color: var(--accent); }
+    .subtitle { color: var(--muted); margin-bottom: 24px; font-size: 14px; }
+
     .panel {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 18px;
+      border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(8px);
+      margin-bottom: 16px;
     }
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
+
+    .steps {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
     }
-    input[type="url"], input[type="text"], textarea {
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      flex: 1;
+      transition: all 0.3s;
+    }
+    .step.active {
+      background: rgba(91, 141, 255, 0.15);
+      border-color: var(--accent);
+    }
+    .step.done {
+      background: rgba(93, 244, 215, 0.1);
+      border-color: var(--accent-2);
+    }
+    .step.disabled { opacity: 0.4; }
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .step.active .step-num { background: var(--accent); color: #0b1021; }
+    .step.done .step-num { background: var(--accent-2); color: #0b1021; }
+    .step-text strong { display: block; font-size: 14px; }
+    .step-text span { color: var(--muted); font-size: 12px; }
+
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+    input, textarea {
       width: 100%;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(255, 255, 255, 0.03);
       color: var(--text);
-      border-radius: 12px;
+      border-radius: 10px;
       padding: 12px 14px;
       font-size: 14px;
-      transition: border 0.2s, box-shadow 0.2s;
+      margin-bottom: 12px;
     }
-    input[type="url"]:focus, input[type="text"]:focus, textarea:focus {
+    input:focus, textarea:focus {
       outline: none;
-      border-color: rgba(91, 141, 255, 0.7);
-      box-shadow: 0 0 0 4px rgba(91, 141, 255, 0.18);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(91, 141, 255, 0.15);
     }
-    textarea {
-      min-height: 120px;
-      resize: vertical;
+    textarea { min-height: 100px; resize: vertical; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 14px 24px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.1s, opacity 0.2s;
     }
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
+    button:active:not(:disabled) { transform: scale(0.98); }
+    button.primary {
+      background: linear-gradient(135deg, #5b8dff, #5df4d7);
+      color: #0b1021;
+      width: 100%;
     }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: end;
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
     }
-    .location-input-wrapper {
-      position: relative;
-      flex: 1;
-    }
-    .location-type-toggle {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .toggle-btn {
-      padding: 6px 12px;
+      padding: 8px 14px;
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(255, 255, 255, 0.03);
@@ -114,1125 +132,536 @@
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
     }
     .toggle-btn.active {
       background: rgba(91, 141, 255, 0.2);
       border-color: rgba(91, 141, 255, 0.5);
       color: var(--accent);
     }
-    .toggle-btn:hover:not(.active) {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text);
-    }
-    .coords-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .coords-inputs input {
-      width: 100%;
-    }
-    .location-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .location-status.success {
-      color: var(--accent-2);
-    }
-    .location-status.error {
-      color: var(--danger);
-    }
-    .location-icon {
-      width: 14px;
-      height: 14px;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-top: 6px;
-    }
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
-      color: #0b1021;
-    }
-    button.primary {
-      background: linear-gradient(135deg, #5b8dff, #5df4d7);
-      box-shadow: 0 10px 30px rgba(91, 141, 255, 0.35);
-    }
-    button.secondary {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-    }
-    button.icon-btn {
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(93, 244, 215, 0.12);
-      border: 1px solid rgba(93, 244, 215, 0.3);
-      color: var(--accent-2);
-    }
-    button.icon-btn:hover:not(:disabled) {
-      background: rgba(93, 244, 215, 0.2);
-      border-color: rgba(93, 244, 215, 0.5);
-    }
-    button.icon-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-    button:not(:disabled):active {
-      transform: translateY(1px);
-    }
-    .status {
-      font-size: 13px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      border-radius: 30px;
-      font-weight: 600;
-      font-size: 12px;
-      letter-spacing: 0.01em;
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text);
-    }
-    .pill.severity-emergency { background: rgba(255, 50, 50, 0.2); color: #ff6b6b; }
-    .pill.severity-high { background: rgba(255, 107, 107, 0.16); color: #ff8b8b; }
-    .pill.severity-medium { background: rgba(255, 182, 91, 0.16); color: #ffc187; }
-    .pill.severity-low { background: rgba(93, 244, 215, 0.12); color: #7df2dc; }
-    .pill.route { background: rgba(91, 141, 255, 0.14); color: #9bc2ff; }
-    .pill.weather { background: rgba(255, 182, 91, 0.12); color: #ffc187; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 14px;
-      margin-top: 18px;
-    }
-    .card {
+
+    .results-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+    .result-card {
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      min-height: 180px;
+      border-radius: 12px;
+      padding: 14px;
     }
-    .card h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-      letter-spacing: -0.01em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+    .result-card h3 { margin: 0 0 8px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .result-card p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    .pill {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 11px;
     }
-    .muted { color: var(--muted); }
-    ul {
-      margin: 10px 0;
-      padding-left: 18px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-    .kv {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 12px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .kv strong { color: var(--text); }
-    .block {
+    .pill.emergency { background: rgba(255, 50, 50, 0.2); color: #ff6b6b; }
+    .pill.high { background: rgba(255, 107, 107, 0.16); color: #ff8b8b; }
+    .pill.medium { background: rgba(255, 182, 91, 0.16); color: #ffc187; }
+    .pill.low { background: rgba(93, 244, 215, 0.12); color: #7df2dc; }
+    .pill.info { background: rgba(91, 141, 255, 0.14); color: #9bc2ff; }
+
+    .vendor-card {
       background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
-      padding: 12px;
-      color: var(--text);
-      line-height: 1.5;
-      margin-top: 8px;
-      white-space: pre-wrap;
+      padding: 16px;
+      margin-bottom: 12px;
     }
-    .code {
-      background: #0c1223;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 12px;
-      overflow-x: auto;
-      font-family: "SFMono-Regular", Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.5;
-      color: #dce5ff;
-      margin-top: 12px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    .vendor-card.primary {
+      border-color: rgba(93, 244, 215, 0.5);
+      background: rgba(93, 244, 215, 0.08);
     }
-    .error {
-      color: #ff9b9b;
+    .vendor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .vendor-name { font-size: 18px; font-weight: 600; }
+    .vendor-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
       font-weight: 600;
     }
-    .badge {
+    .vendor-badge.primary { background: rgba(93, 244, 215, 0.2); color: var(--accent-2); }
+    .vendor-badge.backup { background: rgba(255, 182, 91, 0.15); color: var(--warn); }
+
+    .time-slots { margin-top: 12px; }
+    .time-slots label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .time-badge {
       display: inline-block;
       padding: 6px 10px;
+      background: rgba(93, 244, 215, 0.15);
+      border: 1px solid rgba(93, 244, 215, 0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--accent-2);
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+    .no-match { color: var(--warn); font-size: 12px; }
+
+    .status { font-size: 13px; color: var(--muted); margin-top: 12px; text-align: center; }
+    .status.error { color: var(--danger); }
+    .status.success { color: var(--accent-2); }
+
+    .hidden { display: none !important; }
+    .muted { color: var(--muted); }
+
+    .divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 20px 0;
+    }
+
+    .info-box {
+      background: rgba(91, 141, 255, 0.1);
+      border: 1px solid rgba(91, 141, 255, 0.2);
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--muted);
-      font-size: 12px;
-      margin-right: 8px;
-      margin-top: 6px;
-    }
-    .weather-preview {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      margin-top: 10px;
-    }
-    .weather-preview .temp {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .weather-preview .condition {
+      padding: 12px 14px;
       font-size: 13px;
-      color: var(--muted);
-    }
-    .weather-preview .location-name {
-      font-size: 12px;
       color: var(--accent);
+      margin-bottom: 16px;
     }
-    .weather-icon {
-      width: 48px;
-      height: 48px;
-    }
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(93, 244, 215, 0.2);
-      border-top-color: var(--accent-2);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+
     @media (max-width: 640px) {
-      body { padding: 18px; }
-      .actions { flex-direction: column; align-items: stretch; }
-      button { width: 100%; text-align: center; }
-      .kv { grid-template-columns: 1fr; }
-      .form-row { grid-template-columns: 1fr; }
-      .coords-inputs { grid-template-columns: 1fr; }
+      .row, .row-3, .results-grid { grid-template-columns: 1fr; }
+      .steps { flex-direction: column; }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <header>
+    <h1>RentMatrix AI Maintenance Triage</h1>
+    <p class="subtitle">Describe your issue, pick your available times, and we'll match you with the best vendor.</p>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step active" id="step1-indicator">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <strong>Describe Issue</strong>
+          <span>What's the problem?</span>
+        </div>
+      </div>
+      <div class="step disabled" id="step2-indicator">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <strong>Your Availability</strong>
+          <span>When are you free?</span>
+        </div>
+      </div>
+      <div class="step disabled" id="step3-indicator">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <strong>Vendor Match</strong>
+          <span>We find the best fit</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Description -->
+    <div class="panel" id="step1-panel">
+      <h2>Step 1: What's the problem?</h2>
+
+      <label>Describe the maintenance issue *</label>
+      <textarea id="description" placeholder="Example: Water is leaking from the bathroom ceiling. It started this morning and there's a growing water stain."></textarea>
+
       <div>
-        <h1>RentMatrix AI — Triage Playground</h1>
-        <p class="subtle">Paste a tenant maintenance description, optionally add location for weather context, hit "Run triage", and inspect the structured output.</p>
+        <label>Your Location (for weather context)</label>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button type="button" class="toggle-btn active" id="toggle-text">City/Address</button>
+          <button type="button" class="toggle-btn" id="toggle-gps">Use My Location</button>
+        </div>
+        <div id="location-text-input">
+          <input id="location" type="text" placeholder="e.g., Boston, MA" style="margin-bottom: 0;">
+        </div>
+        <div id="location-coords-input" style="display: none;">
+          <div class="row">
+            <input id="location-lat" type="text" placeholder="Latitude" style="margin-bottom: 0;" readonly>
+            <input id="location-lon" type="text" placeholder="Longitude" style="margin-bottom: 0;" readonly>
+          </div>
+        </div>
+        <div id="location-status" style="display: none; font-size: 12px; margin-top: 8px;"></div>
       </div>
-    </header>
 
-    <section class="panel">
-      <div class="form-grid">
-        <div>
-          <label for="api-url">API endpoint</label>
-          <input id="api-url" type="url" value="http://localhost:8000/triage" spellcheck="false">
-        </div>
-        
-        <!-- Location Input Section -->
-        <div>
-          <label>Location (optional - for weather context)</label>
-          <div class="location-type-toggle">
-            <button type="button" class="toggle-btn active" id="toggle-text">City / Address</button>
-            <button type="button" class="toggle-btn" id="toggle-coords">Coordinates</button>
-            <button type="button" class="toggle-btn" id="toggle-gps">Use My Location</button>
-          </div>
-          
-          <div id="location-text-input">
-            <input id="location-query" type="text" placeholder="e.g., New York, 10001, Los Angeles CA" spellcheck="false">
-          </div>
-          
-          <div id="location-coords-input" style="display: none;">
-            <div class="coords-inputs">
-              <input id="location-lat" type="text" placeholder="Latitude (e.g., 40.7128)">
-              <input id="location-lon" type="text" placeholder="Longitude (e.g., -74.0060)">
-            </div>
-          </div>
-          
-          <div id="location-status" class="location-status" style="display: none;">
-            <span class="spinner"></span>
-            <span id="location-status-text">Getting your location...</span>
-          </div>
-          
-          <div id="weather-preview" class="weather-preview" style="display: none;">
-            <img id="weather-icon" class="weather-icon" src="" alt="Weather">
-            <div>
-              <div class="temp"><span id="weather-temp">--</span>°F</div>
-              <div class="condition" id="weather-condition">--</div>
-              <div class="location-name" id="weather-location">--</div>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <label for="description">Maintenance description</label>
-          <textarea id="description" placeholder="Example: The heater stopped working this morning. It is about 50°F outside, no unusual smells or sounds, and no elderly tenants here."></textarea>
-        </div>
-        
-        <!-- Vendor Matching Section -->
-        <div style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 16px; margin-top: 8px;">
-          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
-            <input type="checkbox" id="include-vendor-matching" style="width: auto;">
-            <span>Include Vendor Matching (Agent 6)</span>
-          </label>
-          
-          <div id="vendor-times-section" style="display: none;">
-            <label style="margin-bottom: 4px;">Tenant Preferred Time Slots (3 slots)</label>
-            <div class="muted" style="font-size: 12px; margin-bottom: 10px;">Format: "Day HH:MM-HH:MM" (e.g., "Monday 09:00-12:00")</div>
-            <input id="time-slot-1" type="text" placeholder="Slot 1: e.g., Monday 09:00-12:00" style="margin-bottom: 8px;">
-            <input id="time-slot-2" type="text" placeholder="Slot 2: e.g., Wednesday 14:00-17:00" style="margin-bottom: 8px;">
-            <input id="time-slot-3" type="text" placeholder="Slot 3: e.g., Friday 10:00-15:00">
-          </div>
-        </div>
+      <div style="margin-top: 16px;">
+        <button class="primary" id="submit-step1">Analyze Issue</button>
       </div>
-      <div class="actions">
-        <button id="submit" class="primary">Run triage</button>
-        <button id="sample" class="secondary" type="button">Use sample description</button>
-        <button id="fetch-weather" class="secondary" type="button">Preview Weather</button>
-        <div class="status" id="status">Ready to send a request.</div>
-      </div>
-    </section>
+      <div class="status" id="step1-status"></div>
+    </div>
 
-    <div class="grid" id="cards">
-      <div class="card" id="triage-card">
-        <h3>Triage</h3>
-        <div class="muted">Run the triage to see severity, trade, and reasoning.</div>
-      </div>
-      <div class="card" id="priority-card">
-        <h3>Priority</h3>
-        <div class="muted">Priority score with modifiers.</div>
-      </div>
-      <div class="card" id="explanation-card">
-        <h3>Explanations</h3>
-        <div class="muted">PM and tenant-friendly explanations.</div>
-      </div>
-      <div class="card" id="confidence-card">
-        <h3>Confidence & Routing</h3>
-        <div class="muted">Overall confidence, risk flags, and recommendation.</div>
-      </div>
-      <div class="card" id="sla-card">
-        <h3>SLA</h3>
-        <div class="muted">Response and resolution deadlines.</div>
-      </div>
-      <div class="card" id="weather-card">
-        <h3>Weather Context</h3>
-        <div class="muted">Weather conditions used for triage priority.</div>
-      </div>
-      <div class="card" id="vendor-card" style="display: none; grid-column: 1 / -1;">
-        <h3>Vendor Recommendations 🔧</h3>
-        <div class="muted">Smart vendor matching based on expertise, availability, ratings, and cost.</div>
-      </div>
-      <div class="card" id="vendor-explanation-card" style="display: none; grid-column: 1 / -1;">
-        <h3>Vendor Analysis & Comparison 📊</h3>
-        <div class="muted">Detailed comparison of vendors with pros, cons, and recommendations.</div>
+    <!-- Triage Results (shown after step 1) -->
+    <div class="panel hidden" id="triage-results">
+      <h2>Analysis Results</h2>
+      <div class="results-grid">
+        <div class="result-card">
+          <h3>Classification <span class="pill info" id="result-severity">--</span> <span class="pill info" id="result-trade">--</span></h3>
+          <p id="result-reasoning">--</p>
+        </div>
+        <div class="result-card">
+          <h3>Priority <span class="pill info" id="result-priority">--</span></h3>
+          <p id="result-sla">Response: -- | Resolution: --</p>
+        </div>
       </div>
     </div>
 
-    <div class="panel" style="margin-top:18px;">
-      <div class="status" style="margin-bottom:8px;">Raw response</div>
-      <pre class="code" id="raw-json">{ }</pre>
+    <!-- Step 2: Time Slots -->
+    <div class="panel hidden" id="step2-panel">
+      <h2>Step 2: When are you available?</h2>
+      <p class="muted" style="margin-top: -10px; margin-bottom: 16px;">
+        We detected this is a <strong id="detected-trade">--</strong> issue. Please provide 3 time slots when you're available for the repair.
+      </p>
+
+      <div class="info-box">
+        Format: Day + Time Range (e.g., "Monday 09:00-12:00")
+      </div>
+
+      <div class="row-3">
+        <div>
+          <label>Time Slot 1 *</label>
+          <input id="time1" type="text" placeholder="Monday 09:00-12:00" style="margin-bottom: 0;">
+        </div>
+        <div>
+          <label>Time Slot 2 *</label>
+          <input id="time2" type="text" placeholder="Wednesday 14:00-17:00" style="margin-bottom: 0;">
+        </div>
+        <div>
+          <label>Time Slot 3 *</label>
+          <input id="time3" type="text" placeholder="Friday 10:00-15:00" style="margin-bottom: 0;">
+        </div>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <button class="primary" id="submit-step2">Find Best Vendor</button>
+      </div>
+      <div class="status" id="step2-status"></div>
     </div>
+
+    <!-- Step 3: Vendor Results -->
+    <div class="panel hidden" id="step3-panel">
+      <h2>Step 3: Your Matched Vendors</h2>
+      <p class="muted" id="vendor-summary"></p>
+      <div id="vendor-list"></div>
+
+      <div class="divider"></div>
+      <button class="secondary" id="start-over" style="width: 100%;">Submit Another Request</button>
+    </div>
+
+    <!-- API Config (collapsible) -->
+    <details style="margin-top: 20px;">
+      <summary style="cursor: pointer; color: var(--muted); font-size: 12px;">API Settings</summary>
+      <div style="margin-top: 10px;">
+        <label style="font-size: 12px;">API Endpoint</label>
+        <input id="api-url" type="text" value="http://localhost:8000" style="font-size: 12px;">
+      </div>
+    </details>
   </div>
 
   <script>
-    // DOM Elements
-    const descriptionInput = document.getElementById("description");
-    const apiInput = document.getElementById("api-url");
-    const submitBtn = document.getElementById("submit");
-    const sampleBtn = document.getElementById("sample");
-    const fetchWeatherBtn = document.getElementById("fetch-weather");
-    const statusEl = document.getElementById("status");
-    const rawEl = document.getElementById("raw-json");
+    // State
+    let currentTrade = null;
+    let triageData = null;
+    let locationMode = 'text';
 
-    // Location elements
-    const toggleText = document.getElementById("toggle-text");
-    const toggleCoords = document.getElementById("toggle-coords");
-    const toggleGps = document.getElementById("toggle-gps");
-    const locationTextInput = document.getElementById("location-text-input");
-    const locationCoordsInput = document.getElementById("location-coords-input");
-    const locationQuery = document.getElementById("location-query");
-    const locationLat = document.getElementById("location-lat");
-    const locationLon = document.getElementById("location-lon");
-    const locationStatus = document.getElementById("location-status");
-    const locationStatusText = document.getElementById("location-status-text");
-    const weatherPreview = document.getElementById("weather-preview");
-    const weatherIcon = document.getElementById("weather-icon");
-    const weatherTemp = document.getElementById("weather-temp");
-    const weatherCondition = document.getElementById("weather-condition");
-    const weatherLocation = document.getElementById("weather-location");
+    // Mock vendors (in real app, these come from backend)
+    const mockVendors = [
+      {
+        vendor_id: "V001",
+        company_name: "QuickFix Plumbing 24/7",
+        primary_trade: "PLUMBING",
+        phone: "555-0101",
+        availability: ["Monday 08:00-18:00", "Tuesday 08:00-18:00", "Wednesday 08:00-18:00", "Thursday 08:00-18:00", "Friday 08:00-18:00"]
+      },
+      {
+        vendor_id: "V002",
+        company_name: "Reliable Plumbing Services",
+        primary_trade: "PLUMBING",
+        phone: "555-0102",
+        availability: ["Monday 09:00-17:00", "Wednesday 09:00-17:00", "Friday 09:00-17:00"]
+      },
+      {
+        vendor_id: "V003",
+        company_name: "Budget Plumbing Co",
+        primary_trade: "PLUMBING",
+        phone: "555-0103",
+        availability: ["Tuesday 10:00-16:00", "Thursday 10:00-16:00"]
+      },
+      {
+        vendor_id: "V004",
+        company_name: "Elite Electric Services",
+        primary_trade: "ELECTRICAL",
+        phone: "555-0201",
+        availability: ["Monday 07:00-19:00", "Tuesday 07:00-19:00", "Wednesday 07:00-19:00", "Thursday 07:00-19:00", "Friday 07:00-19:00"]
+      },
+      {
+        vendor_id: "V005",
+        company_name: "Bright Spark Electrical",
+        primary_trade: "ELECTRICAL",
+        phone: "555-0202",
+        availability: ["Monday 09:00-17:00", "Wednesday 09:00-17:00", "Friday 09:00-17:00"]
+      },
+      {
+        vendor_id: "V006",
+        company_name: "CoolBreeze HVAC",
+        primary_trade: "HVAC",
+        phone: "555-0301",
+        availability: ["Monday 08:00-18:00", "Tuesday 08:00-18:00", "Wednesday 08:00-18:00", "Friday 08:00-18:00"]
+      },
+      {
+        vendor_id: "V007",
+        company_name: "ComfortZone Heating & Cooling",
+        primary_trade: "HVAC",
+        phone: "555-0302",
+        availability: ["Monday 09:00-17:00", "Thursday 09:00-17:00", "Friday 09:00-17:00"]
+      },
+      {
+        vendor_id: "V008",
+        company_name: "AllFix General Maintenance",
+        primary_trade: "GENERAL",
+        phone: "555-0401",
+        availability: ["Monday 08:00-17:00", "Tuesday 08:00-17:00", "Wednesday 08:00-17:00", "Thursday 08:00-17:00", "Friday 08:00-17:00"]
+      }
+    ];
 
-    // Card elements
-    const triageCard = document.getElementById("triage-card");
-    const priorityCard = document.getElementById("priority-card");
-    const explanationCard = document.getElementById("explanation-card");
-    const confidenceCard = document.getElementById("confidence-card");
-    const slaCard = document.getElementById("sla-card");
-    const weatherCard = document.getElementById("weather-card");
-    const vendorCard = document.getElementById("vendor-card");
-    const vendorExplanationCard = document.getElementById("vendor-explanation-card");
+    // Elements
+    const descriptionEl = document.getElementById('description');
+    const locationEl = document.getElementById('location');
+    const locationLatEl = document.getElementById('location-lat');
+    const locationLonEl = document.getElementById('location-lon');
+    const locationTextInput = document.getElementById('location-text-input');
+    const locationCoordsInput = document.getElementById('location-coords-input');
+    const locationStatusEl = document.getElementById('location-status');
+    const toggleText = document.getElementById('toggle-text');
+    const toggleGps = document.getElementById('toggle-gps');
+    const apiUrlEl = document.getElementById('api-url');
 
-    // Vendor matching elements
-    const includeVendorMatchingCheckbox = document.getElementById("include-vendor-matching");
-    const vendorTimesSection = document.getElementById("vendor-times-section");
-    const timeSlot1 = document.getElementById("time-slot-1");
-    const timeSlot2 = document.getElementById("time-slot-2");
-    const timeSlot3 = document.getElementById("time-slot-3");
+    const step1Panel = document.getElementById('step1-panel');
+    const step2Panel = document.getElementById('step2-panel');
+    const step3Panel = document.getElementById('step3-panel');
+    const triageResultsEl = document.getElementById('triage-results');
 
-    const sampleText = "The heater stopped working this morning. It is about 50°F outside, no unusual smells, no carbon monoxide detector going off. No elderly or infants in the unit.";
+    const step1Indicator = document.getElementById('step1-indicator');
+    const step2Indicator = document.getElementById('step2-indicator');
+    const step3Indicator = document.getElementById('step3-indicator');
 
-    // Location mode state
-    let locationMode = "text"; // "text", "coords", or "gps"
-    let currentCoords = null;
+    const submitStep1Btn = document.getElementById('submit-step1');
+    const submitStep2Btn = document.getElementById('submit-step2');
+    const startOverBtn = document.getElementById('start-over');
 
-    // Toggle location input modes
+    const step1StatusEl = document.getElementById('step1-status');
+    const step2StatusEl = document.getElementById('step2-status');
+
+    const time1El = document.getElementById('time1');
+    const time2El = document.getElementById('time2');
+    const time3El = document.getElementById('time3');
+
+    // Location functions
     function setLocationMode(mode) {
       locationMode = mode;
-      
-      // Update toggle button states
-      toggleText.classList.toggle("active", mode === "text");
-      toggleCoords.classList.toggle("active", mode === "coords");
-      toggleGps.classList.toggle("active", mode === "gps");
-      
-      // Show/hide inputs
-      locationTextInput.style.display = mode === "text" ? "block" : "none";
-      locationCoordsInput.style.display = mode === "coords" ? "block" : "none";
-      
-      if (mode === "gps") {
+      toggleText.classList.toggle('active', mode === 'text');
+      toggleGps.classList.toggle('active', mode === 'gps');
+      locationTextInput.style.display = mode === 'text' ? 'block' : 'none';
+      locationCoordsInput.style.display = mode === 'gps' ? 'block' : 'none';
+
+      if (mode === 'gps') {
         requestGeolocation();
       } else {
-        locationStatus.style.display = "none";
+        locationStatusEl.style.display = 'none';
       }
     }
 
-    toggleText.addEventListener("click", () => setLocationMode("text"));
-    toggleCoords.addEventListener("click", () => setLocationMode("coords"));
-    toggleGps.addEventListener("click", () => setLocationMode("gps"));
-
-    // Vendor matching toggle
-    includeVendorMatchingCheckbox.addEventListener("change", (e) => {
-      vendorTimesSection.style.display = e.target.checked ? "block" : "none";
-      // Set default time slots when enabled
-      if (e.target.checked && !timeSlot1.value) {
-        timeSlot1.value = "Monday 09:00-12:00";
-        timeSlot2.value = "Wednesday 14:00-17:00";
-        timeSlot3.value = "Friday 10:00-15:00";
-      }
-    });
-
-    // Geolocation
     function requestGeolocation() {
       if (!navigator.geolocation) {
-        showLocationStatus("Geolocation is not supported by your browser", "error");
+        showLocationStatus('Geolocation not supported', 'error');
         return;
       }
-
-      showLocationStatus("Getting your location...", "loading");
+      showLocationStatus('Getting your location...', 'loading');
 
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          currentCoords = {
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          };
-          locationLat.value = currentCoords.lat.toFixed(6);
-          locationLon.value = currentCoords.lon.toFixed(6);
-          showLocationStatus(`Location found: ${currentCoords.lat.toFixed(4)}, ${currentCoords.lon.toFixed(4)}`, "success");
-          
-          // Auto-fetch weather preview
-          fetchWeatherPreview();
+        (pos) => {
+          locationLatEl.value = pos.coords.latitude.toFixed(6);
+          locationLonEl.value = pos.coords.longitude.toFixed(6);
+          showLocationStatus('Location found!', 'success');
         },
-        (error) => {
-          let message = "Unable to get location";
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              message = "Location permission denied";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              message = "Location unavailable";
-              break;
-            case error.TIMEOUT:
-              message = "Location request timed out";
-              break;
-          }
-          showLocationStatus(message, "error");
+        (err) => {
+          showLocationStatus(err.code === 1 ? 'Permission denied' : 'Could not get location', 'error');
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     }
 
-    function showLocationStatus(message, type) {
-      locationStatus.style.display = "flex";
-      locationStatus.className = "location-status " + type;
-      
-      if (type === "loading") {
-        locationStatusText.innerHTML = '<span class="spinner"></span> ' + message;
-      } else {
-        const icon = type === "success" 
-          ? '<svg class="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
-          : '<svg class="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-        locationStatusText.innerHTML = icon + ' ' + message;
-      }
+    function showLocationStatus(msg, type) {
+      locationStatusEl.style.display = 'block';
+      locationStatusEl.textContent = msg;
+      locationStatusEl.style.color = type === 'success' ? 'var(--accent-2)' : type === 'error' ? 'var(--danger)' : 'var(--muted)';
     }
 
-    // Get current location data for API
     function getLocationData() {
-      if (locationMode === "text" && locationQuery.value.trim()) {
-        return { query: locationQuery.value.trim() };
-      } else if ((locationMode === "coords" || locationMode === "gps") && locationLat.value && locationLon.value) {
-        return {
-          latitude: parseFloat(locationLat.value),
-          longitude: parseFloat(locationLon.value)
-        };
+      if (locationMode === 'text' && locationEl.value.trim()) {
+        return { query: locationEl.value.trim() };
+      } else if (locationMode === 'gps' && locationLatEl.value && locationLonEl.value) {
+        return { latitude: parseFloat(locationLatEl.value), longitude: parseFloat(locationLonEl.value) };
       }
       return null;
     }
 
-    // Fetch weather preview
-    async function fetchWeatherPreview() {
-      const location = getLocationData();
-      if (!location) {
-        weatherPreview.style.display = "none";
-        return;
-      }
+    toggleText.addEventListener('click', () => setLocationMode('text'));
+    toggleGps.addEventListener('click', () => setLocationMode('gps'));
 
-      const baseUrl = apiInput.value.trim().replace("/triage", "");
-      let url = `${baseUrl}/weather?`;
-      
-      if (location.query) {
-        url += `location=${encodeURIComponent(location.query)}`;
-      } else {
-        url += `lat=${location.latitude}&lon=${location.longitude}`;
-      }
-
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Failed to fetch weather");
-        
-        const data = await res.json();
-        displayWeatherPreview(data);
-      } catch (err) {
-        console.error("Weather fetch error:", err);
-        weatherPreview.style.display = "none";
-      }
-    }
-
-    function displayWeatherPreview(data) {
-      weatherPreview.style.display = "flex";
-      weatherTemp.textContent = Math.round(data.temperature || 0);
-      weatherCondition.textContent = data.condition || "Unknown";
-      
-      const loc = data.location;
-      if (loc) {
-        weatherLocation.textContent = `${loc.name}${loc.region ? ", " + loc.region : ""}`;
-      } else {
-        weatherLocation.textContent = "Location detected";
-      }
-
-      // WeatherAPI icon URL
-      if (data.condition_code) {
-        // Map condition code to icon (simplified)
-        weatherIcon.src = `https://cdn.weatherapi.com/weather/64x64/${data.is_day ? 'day' : 'night'}/${getWeatherIconCode(data.condition_code)}.png`;
-        weatherIcon.style.display = "block";
-      } else {
-        weatherIcon.style.display = "none";
-      }
-    }
-
-    function getWeatherIconCode(code) {
-      // WeatherAPI condition codes to icon file names
-      const iconMap = {
-        1000: 113, // Sunny/Clear
-        1003: 116, // Partly cloudy
-        1006: 119, // Cloudy
-        1009: 122, // Overcast
-        1030: 143, // Mist
-        1063: 176, // Patchy rain
-        1066: 179, // Patchy snow
-        1087: 200, // Thundery outbreaks
-        1135: 248, // Fog
-        1183: 296, // Light rain
-        1189: 302, // Moderate rain
-        1195: 308, // Heavy rain
-        1213: 326, // Light snow
-        1219: 332, // Moderate snow
-        1225: 338, // Heavy snow
-      };
-      return iconMap[code] || 113;
-    }
-
-    fetchWeatherBtn.addEventListener("click", fetchWeatherPreview);
-
-    // Auto-fetch weather on location input blur
-    locationQuery.addEventListener("blur", () => {
-      if (locationQuery.value.trim()) {
-        fetchWeatherPreview();
-      }
-    });
-
-    sampleBtn.addEventListener("click", () => {
-      descriptionInput.value = sampleText;
-      descriptionInput.focus();
-      statusEl.textContent = "Sample description loaded.";
-    });
-
-    submitBtn.addEventListener("click", async () => {
-      const description = descriptionInput.value.trim();
-      const apiUrl = apiInput.value.trim() || "http://localhost:8000/triage";
-
+    // Step 1: Submit description
+    submitStep1Btn.addEventListener('click', async () => {
+      const description = descriptionEl.value.trim();
       if (!description) {
-        statusEl.innerHTML = '<span class="error">Please add a description.</span>';
+        step1StatusEl.textContent = 'Please describe the issue';
+        step1StatusEl.className = 'status error';
         return;
       }
 
-      submitBtn.disabled = true;
-      sampleBtn.disabled = true;
-      statusEl.textContent = "Sending request...";
+      submitStep1Btn.disabled = true;
+      step1StatusEl.textContent = 'Analyzing...';
+      step1StatusEl.className = 'status';
 
-      // Build request body
-      const requestBody = { description };
-      const location = getLocationData();
-      if (location) {
-        requestBody.location = location;
-      }
-      
-      // Add vendor matching data if enabled
-      if (includeVendorMatchingCheckbox.checked) {
-        requestBody.include_vendor_matching = true;
-        const timeSlots = [
-          timeSlot1.value.trim(),
-          timeSlot2.value.trim(),
-          timeSlot3.value.trim()
-        ].filter(slot => slot.length > 0);
-        
-        if (timeSlots.length > 0) {
-          requestBody.tenant_preferred_times = timeSlots;
-        }
-      }
+      const body = { description };
+      const loc = getLocationData();
+      if (loc) body.location = loc;
 
       try {
-        const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody)
+        const res = await fetch(`${apiUrlEl.value}/triage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         });
 
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || "Request failed");
-        }
+        if (!res.ok) throw new Error(data.detail || 'Failed');
 
-        renderAll(data);
-        statusEl.textContent = "Success — parsed response below.";
+        triageData = data;
+        currentTrade = data.triage?.trade || 'GENERAL';
+
+        // Update results
+        document.getElementById('result-severity').textContent = data.triage?.severity || '--';
+        document.getElementById('result-severity').className = 'pill ' + (data.triage?.severity || '').toLowerCase();
+        document.getElementById('result-trade').textContent = data.triage?.trade || '--';
+        document.getElementById('result-reasoning').textContent = data.triage?.reasoning || 'No details';
+        document.getElementById('result-priority').textContent = 'Score: ' + (data.priority?.priority_score ?? '--');
+        document.getElementById('result-sla').textContent = `Response: ${data.sla?.response_hours ?? '--'}h | Resolution: ${data.sla?.resolution_hours ?? '--'}h`;
+        document.getElementById('detected-trade').textContent = currentTrade;
+
+        // Show step 2
+        triageResultsEl.classList.remove('hidden');
+        step2Panel.classList.remove('hidden');
+        step1Indicator.className = 'step done';
+        step2Indicator.className = 'step active';
+        step1StatusEl.textContent = '';
+
+        step2Panel.scrollIntoView({ behavior: 'smooth' });
+
       } catch (err) {
-        statusEl.innerHTML = '<span class="error">Error: ' + (err?.message || "Request failed") + "</span>";
+        step1StatusEl.textContent = 'Error: ' + err.message;
+        step1StatusEl.className = 'status error';
       } finally {
-        submitBtn.disabled = false;
-        sampleBtn.disabled = false;
+        submitStep1Btn.disabled = false;
       }
     });
 
-    function renderAll(payload) {
-      rawEl.textContent = JSON.stringify(payload, null, 2);
-      renderTriage(payload.triage || {});
-      renderPriority(payload.priority || {});
-      renderExplanation(payload.explanation || {});
-      renderConfidence(payload.confidence || {});
-      renderSla(payload.sla || {});
-      renderWeather(payload.weather || null);
-      renderVendors(payload.vendors || null);
-      renderVendorExplanation(payload.vendor_explanation || null);
-    }
+    // Step 2: Submit time slots
+    submitStep2Btn.addEventListener('click', async () => {
+      const times = [time1El.value.trim(), time2El.value.trim(), time3El.value.trim()].filter(t => t);
 
-    function pill(text, cls = "") {
-      return '<span class="pill ' + cls + '">' + text + "</span>";
-    }
-
-    function list(items) {
-      if (!items || !items.length) return '<div class="muted">None</div>';
-      return "<ul>" + items.map(x => "<li>" + escapeHtml(String(x)) + "</li>").join("") + "</ul>";
-    }
-
-    function escapeHtml(str) {
-      if (str === null || str === undefined) return '';
-      const s = String(str);
-      return s.replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c]));
-    }
-
-    function renderTriage(t) {
-      const severity = (t.severity || "UNKNOWN").toUpperCase();
-      triageCard.innerHTML = `
-        <h3>Triage ${pill(severity, "severity-" + severity.toLowerCase())} ${pill(t.trade || "N/A", "route")}</h3>
-        <div class="block">${escapeHtml(t.reasoning || "—")}</div>
-        <div class="kv" style="margin-top:10px;">
-          <div><strong>Confidence</strong><br><span class="muted">${t.confidence ?? "N/A"}</span></div>
-          <div><strong>Key factors</strong><br></div>
-        </div>
-        ${list(t.key_factors)}
-      `;
-    }
-
-    function renderPriority(p) {
-      const factors = (p.applied_factors || []).map(f => {
-        if (typeof f === "object" && f !== null) {
-          const name = f.factor || "Factor";
-          const hr = f.hr ?? "";
-          const reason = f.reason || "";
-          return `${name}${hr !== "" ? " (×" + hr + ")" : ""}${reason ? ": " + reason : ""}`;
-        }
-        return String(f);
-      });
-
-      const interactions = (p.applied_interactions || []).map(i => {
-        if (typeof i === "object" && i !== null) {
-          return `${i.interaction || "Interaction"}${i.ir ? " (×" + i.ir + ")" : ""}${i.trigger ? ": " + i.trigger : ""}`;
-        }
-        return String(i);
-      });
-
-      priorityCard.innerHTML = `
-        <h3>Priority ${pill("Score " + (p.priority_score ?? "N/A"), "route")} ${pill(p.severity || "N/A", "severity-" + (p.severity || "").toLowerCase())}</h3>
-        <div class="kv">
-          <div><strong>Base hazard</strong><br><span class="muted">${p.base_hazard ?? "N/A"}</span></div>
-          <div><strong>Combined hazard</strong><br><span class="muted">${p.combined_hazard ?? "N/A"}</span></div>
-          <div><strong>Confidence</strong><br><span class="muted">${p.confidence ?? "N/A"}</span></div>
-          <div><strong>Factors applied</strong><br><span class="muted">${factors.length}</span></div>
-        </div>
-        <div style="margin-top:10px;"><strong>Applied factors</strong>${factors.length ? list(factors) : '<div class="muted">None</div>'}</div>
-        ${interactions.length ? '<div style="margin-top:10px;"><strong>Interactions</strong>' + list(interactions) + '</div>' : ''}
-        ${p.calculation_trace ? '<div style="margin-top:10px;"><strong>Calculation trace</strong><div class="block" style="font-size:12px;">' + escapeHtml(p.calculation_trace) + '</div></div>' : ''}
-      `;
-    }
-
-    function renderExplanation(e) {
-      explanationCard.innerHTML = `
-        <h3>Explanations</h3>
-        <div class="block"><strong>PM:</strong> ${escapeHtml(e.pm_explanation || "—")}</div>
-        <div class="block"><strong>Tenant:</strong> ${escapeHtml(e.tenant_explanation || "—")}</div>
-      `;
-    }
-
-    function renderConfidence(c) {
-      const factors = c.confidence_factors || [];
-      const risks = c.risk_flags || [];
-      confidenceCard.innerHTML = `
-        <h3>Confidence & Routing ${pill((c.routing || "—"), "route")}</h3>
-        <div class="kv">
-          <div><strong>Confidence</strong><br><span class="muted">${c.confidence ?? "N/A"}</span></div>
-          <div><strong>Recommendation</strong><br><span class="muted">${escapeHtml(c.recommendation || "—")}</span></div>
-        </div>
-        <div style="margin-top:10px;"><strong>Risk flags</strong><br>${risks.length ? risks.map(r => '<span class="badge">' + escapeHtml(r) + "</span>").join("") : '<span class="muted">None</span>'}</div>
-        <div style="margin-top:10px;"><strong>Confidence factors</strong>${factors.length ? list(factors.map(f => f.factor + " (" + f.impact + ", " + f.points + "): " + f.reason)) : '<div class="muted">None</div>'}</div>
-      `;
-    }
-
-    function renderSla(s) {
-      slaCard.innerHTML = `
-        <h3>SLA ${pill(s.tier || "—", "route")}</h3>
-        <div class="kv">
-          <div><strong>Response deadline</strong><br><span class="muted">${s.response_deadline || "—"}</span></div>
-          <div><strong>Resolution deadline</strong><br><span class="muted">${s.resolution_deadline || "—"}</span></div>
-          <div><strong>Response hours</strong><br><span class="muted">${s.response_hours ?? "—"}</span></div>
-          <div><strong>Resolution hours</strong><br><span class="muted">${s.resolution_hours ?? "—"}</span></div>
-          <div><strong>Business hours only</strong><br><span class="muted">${s.business_hours_only ? "Yes" : "No"}</span></div>
-          <div><strong>Vendor tier</strong><br><span class="muted">${s.vendor_tier || "—"}</span></div>
-        </div>
-      `;
-    }
-
-    function renderWeather(w) {
-      if (!w) {
-        weatherCard.innerHTML = `
-          <h3>Weather Context</h3>
-          <div class="muted">No location provided — using default weather values.</div>
-        `;
+      if (times.length < 1) {
+        step2StatusEl.textContent = 'Please enter at least one time slot';
+        step2StatusEl.className = 'status error';
         return;
       }
 
-      const urgency = w.urgency_modifiers || {};
-      const urgencyNotes = urgency.weather_urgency_notes || [];
-      const alerts = w.alerts || [];
-      const loc = w.location;
-      
-      let locationStr = "Unknown";
-      if (loc) {
-        locationStr = `${loc.name}${loc.region ? ", " + loc.region : ""}${loc.country ? ", " + loc.country : ""}`;
+      submitStep2Btn.disabled = true;
+      step2StatusEl.textContent = 'Finding best vendors...';
+      step2StatusEl.className = 'status';
+
+      try {
+        const res = await fetch(`${apiUrlEl.value}/assign-vendors`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            trade: currentTrade,
+            tenant_preferred_times: times,
+            vendors: mockVendors  // In production, this comes from backend
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed');
+
+        renderVendorResults(data, times);
+
+        // Show step 3
+        step3Panel.classList.remove('hidden');
+        step2Indicator.className = 'step done';
+        step3Indicator.className = 'step done';
+        step2StatusEl.textContent = '';
+
+        step3Panel.scrollIntoView({ behavior: 'smooth' });
+
+      } catch (err) {
+        step2StatusEl.textContent = 'Error: ' + err.message;
+        step2StatusEl.className = 'status error';
+      } finally {
+        submitStep2Btn.disabled = false;
+      }
+    });
+
+    // Render vendors
+    function renderVendorResults(data, tenantTimes) {
+      const vendors = data.assigned_vendors || [];
+      const summaryEl = document.getElementById('vendor-summary');
+      const listEl = document.getElementById('vendor-list');
+
+      if (!data.success || vendors.length === 0) {
+        summaryEl.textContent = data.error || 'No vendors found for this trade.';
+        listEl.innerHTML = '';
+        return;
       }
 
-      weatherCard.innerHTML = `
-        <h3>Weather Context ${pill(Math.round(w.temperature || 0) + "°F", "weather")} ${pill(w.condition || "—", "route")}</h3>
-        <div class="kv">
-          <div><strong>Location</strong><br><span class="muted">${escapeHtml(locationStr)}</span></div>
-          <div><strong>Feels like</strong><br><span class="muted">${w.feelslike_f ?? "—"}°F</span></div>
-          <div><strong>Humidity</strong><br><span class="muted">${w.humidity ?? "—"}%</span></div>
-          <div><strong>Wind</strong><br><span class="muted">${w.wind_mph ?? "—"} mph ${w.wind_dir || ""}</span></div>
-          <div><strong>UV Index</strong><br><span class="muted">${w.uv ?? "—"}</span></div>
-          <div><strong>Forecast</strong><br><span class="muted">${escapeHtml(w.forecast || "—")}</span></div>
-        </div>
-        ${urgencyNotes.length ? '<div style="margin-top:10px;"><strong>Weather Impact on Priority</strong>' + list(urgencyNotes) + '</div>' : ''}
-        ${alerts.length ? '<div style="margin-top:10px;"><strong>Weather Alerts</strong>' + list(alerts) + '</div>' : ''}
-        <div class="kv" style="margin-top:10px;">
-          <div><strong>Extreme Cold</strong><br><span class="muted">${urgency.is_extreme_cold ? "Yes ⚠️" : "No"}</span></div>
-          <div><strong>Extreme Heat</strong><br><span class="muted">${urgency.is_extreme_heat ? "Yes ⚠️" : "No"}</span></div>
-          <div><strong>Freeze Risk</strong><br><span class="muted">${urgency.freeze_risk ? "Yes ⚠️" : "No"}</span></div>
-          <div><strong>Severe Alerts</strong><br><span class="muted">${urgency.has_severe_alerts ? "Yes ⚠️" : "No"}</span></div>
-        </div>
+      summaryEl.innerHTML = `
+        Found <strong>${data.total_available}</strong> ${data.trade} vendors.
+        Matched based on your availability:
+        ${tenantTimes.map(t => `<span class="time-badge">${esc(t)}</span>`).join('')}
       `;
-    }
 
-    function renderVendors(v) {
-      if (!v) {
-        vendorCard.style.display = "none";
-        return;
-      }
-      
-      vendorCard.style.display = "block";
-      
-      if (v.error) {
-        vendorCard.innerHTML = `
-          <h3>Vendor Recommendations ⚠️</h3>
-          <div class="muted" style="color: var(--warn);">Vendor matching failed: ${escapeHtml(v.error)}</div>
-        `;
-        return;
-      }
-      
-      const vendors = v.matched_vendors || [];
-      const summary = v.summary || {};
-      const recommendations = v.recommendations || {};
-      const confidence = v.confidence || 0;
-      
-      if (vendors.length === 0) {
-        vendorCard.innerHTML = `
-          <h3>Vendor Recommendations</h3>
-          <div class="muted">No vendors matched for this request.</div>
-        `;
-        return;
-      }
-      
-      let vendorsHtml = vendors.map((vendor, idx) => {
-        const contact = vendor.contact || {};
-        const cost = vendor.estimated_cost || {};
-        const breakdown = vendor.score_breakdown || {};
-        const strengths = vendor.strengths || [];
-        const considerations = vendor.considerations || [];
-        const matchingSlots = vendor.matching_time_slots || [];
-        
-        const availabilityColor = 
-          vendor.availability_match === "Excellent" ? "#5df4d7" :
-          vendor.availability_match === "Good" ? "#9bc2ff" :
-          vendor.availability_match === "Fair" ? "#ffc187" : "#ff8b8b";
-        
+      listEl.innerHTML = vendors.map((v, i) => {
+        const vendor = v.vendor;
+        const isPrimary = v.role === 'primary';
+        const matched = v.matched_times || [];
+
         return `
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+          <div class="vendor-card ${isPrimary ? 'primary' : ''}">
+            <div class="vendor-header">
               <div>
-                <div style="font-size: 18px; font-weight: 600; color: var(--text);">
-                  ${idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : ''}
-                  #${vendor.rank} ${escapeHtml(vendor.company_name || 'Unknown')}
-                </div>
-                <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">
-                  ${escapeHtml(contact.name || '')} | ${escapeHtml(contact.phone || '')}
-                </div>
+                <div class="vendor-name">${isPrimary ? '🥇 ' : i === 1 ? '🥈 ' : '🥉 '}${esc(vendor.company_name)}</div>
+                <div class="muted" style="font-size: 13px; margin-top: 4px;">📞 ${esc(vendor.phone || 'N/A')}</div>
               </div>
-              <div style="text-align: right;">
-                <div style="font-size: 24px; font-weight: 700; color: ${vendor.match_score >= 85 ? '#5df4d7' : vendor.match_score >= 70 ? '#9bc2ff' : '#ffc187'};">
-                  ${vendor.match_score || 0}
-                </div>
-                <div style="font-size: 11px; color: var(--muted);">Match Score</div>
-              </div>
+              <span class="vendor-badge ${v.role}">${v.role.toUpperCase()}</span>
             </div>
-            
-            <div class="kv" style="margin-bottom: 10px;">
-              <div><strong>Availability</strong><br><span style="color: ${availabilityColor};">${vendor.availability_match || 'N/A'}</span></div>
-              <div><strong>Estimated Cost</strong><br><span class="muted">$${cost.estimated_total_min?.toFixed(2) || '0'} - $${cost.estimated_total_max?.toFixed(2) || '0'}</span></div>
-            </div>
-            
-            ${matchingSlots.length > 0 ? `
-            <div style="margin-bottom: 10px;">
-              <strong style="font-size: 12px;">Matching Time Slots:</strong>
-              <div style="margin-top: 4px;">
-                ${matchingSlots.map(slot => `<span class="badge">${escapeHtml(slot)}</span>`).join('')}
-              </div>
-            </div>
-            ` : ''}
-            
-            <div style="margin-bottom: 10px;">
-              <strong style="font-size: 12px;">Score Breakdown:</strong>
-              <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">
-                Expertise: ${breakdown.expertise || 0}/30 | 
-                Availability: ${breakdown.availability || 0}/25 | 
-                Ratings: ${breakdown.ratings || 0}/25 | 
-                Location: ${breakdown.location || 0}/15 | 
-                Cost: ${breakdown.cost || 0}/10 | 
-                Special: ${breakdown.special_factors || 0}/10
-              </div>
-            </div>
-            
-            ${strengths.length > 0 ? `
-            <div style="margin-bottom: 8px;">
-              <strong style="font-size: 12px;">✓ Strengths:</strong>
-              ${strengths.map(s => `<div style="font-size: 12px; color: #5df4d7; margin-top: 3px;">• ${escapeHtml(s)}</div>`).join('')}
-            </div>
-            ` : ''}
-            
-            ${considerations.length > 0 ? `
-            <div style="margin-bottom: 8px;">
-              <strong style="font-size: 12px;">! Considerations:</strong>
-              ${considerations.map(c => `<div style="font-size: 12px; color: #ffc187; margin-top: 3px;">• ${escapeHtml(c)}</div>`).join('')}
-            </div>
-            ` : ''}
-            
-            <div style="background: rgba(91, 141, 255, 0.08); border-radius: 8px; padding: 10px; margin-top: 10px;">
-              <div style="font-size: 12px; line-height: 1.5; color: var(--muted);">
-                ${escapeHtml(vendor.recommendation_reason || '')}
+            <div class="time-slots">
+              <label>Matched Time Slots:</label>
+              <div>
+                ${matched.length > 0
+                  ? matched.map(t => `<span class="time-badge">${esc(t)}</span>`).join('')
+                  : '<span class="no-match">⚠️ No matching times - may need to coordinate</span>'
+                }
               </div>
             </div>
           </div>
         `;
       }).join('');
-      
-      vendorCard.innerHTML = `
-        <h3>Vendor Recommendations 🔧 ${pill('Confidence: ' + (confidence * 100).toFixed(0) + '%', 'route')}</h3>
-        <div class="muted" style="margin-bottom: 12px;">
-          Evaluated ${summary.total_vendors_evaluated || 0} vendors, recommending top ${vendors.length}
-        </div>
-        
-        ${recommendations.primary_choice ? `
-        <div style="background: rgba(93, 244, 215, 0.1); border: 1px solid rgba(93, 244, 215, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
-          <div style="font-weight: 600; color: #5df4d7; margin-bottom: 4px;">⭐ Primary Recommendation: ${escapeHtml(recommendations.primary_choice)}</div>
-          <div style="font-size: 13px; color: var(--muted);">${escapeHtml(recommendations.primary_reason || '')}</div>
-        </div>
-        ` : ''}
-        
-        ${vendorsHtml}
-      `;
     }
 
-    function renderVendorExplanation(ve) {
-      if (!ve) {
-        vendorExplanationCard.style.display = "none";
-        return;
-      }
-      
-      vendorExplanationCard.style.display = "block";
-      
-      if (ve.error) {
-        vendorExplanationCard.innerHTML = `
-          <h3>Vendor Analysis & Comparison ⚠️</h3>
-          <div class="muted" style="color: var(--warn);">Analysis failed: ${escapeHtml(ve.error)}</div>
-        `;
-        return;
-      }
-      
-      const summary = ve.summary || {};
-      const explanations = ve.vendor_explanations || [];
-      const sideBySide = ve.side_by_side || {};
-      const messages = ve.stakeholder_messages || {};
-      
-      // Build summary section
-      let summaryHtml = '';
-      if (summary.best_overall_vendor_id) {
-        summaryHtml = `
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-            <div style="background: rgba(93, 244, 215, 0.12); border: 1px solid rgba(93, 244, 215, 0.3); border-radius: 10px; padding: 12px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">🏆 BEST OVERALL</div>
-              <div style="font-weight: 600; color: #5df4d7;">${escapeHtml(summary.best_overall_vendor_id)}</div>
-              <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">${escapeHtml(summary.best_overall_reason || '')}</div>
-            </div>
-            ${summary.runner_up_vendor_id ? `
-            <div style="background: rgba(91, 141, 255, 0.12); border: 1px solid rgba(91, 141, 255, 0.3); border-radius: 10px; padding: 12px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">🥈 RUNNER UP</div>
-              <div style="font-weight: 600; color: #9bc2ff;">${escapeHtml(summary.runner_up_vendor_id)}</div>
-            </div>
-            ` : ''}
-            ${summary.budget_pick_vendor_id ? `
-            <div style="background: rgba(255, 182, 91, 0.12); border: 1px solid rgba(255, 182, 91, 0.3); border-radius: 10px; padding: 12px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">💰 BUDGET PICK</div>
-              <div style="font-weight: 600; color: #ffc187;">${escapeHtml(summary.budget_pick_vendor_id)}</div>
-            </div>
-            ` : ''}
-            ${summary.fastest_response_vendor_id ? `
-            <div style="background: rgba(255, 107, 107, 0.12); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 10px; padding: 12px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">⚡ FASTEST</div>
-              <div style="font-weight: 600; color: #ff8b8b;">${escapeHtml(summary.fastest_response_vendor_id)}</div>
-            </div>
-            ` : ''}
-          </div>
-        `;
-      }
-      
-      // Build vendor explanations with pros/cons
-      let explanationsHtml = explanations.map((vendor, idx) => {
-        const pros = vendor.pros || [];
-        const cons = vendor.cons || [];
-        const riskFlags = vendor.risk_flags || [];
-        
-        return `
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-              <div>
-                <div style="font-size: 16px; font-weight: 600; color: var(--text);">
-                  ${idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : ''}
-                  #${vendor.rank || idx + 1} ${escapeHtml(vendor.company_name || vendor.vendor_id || 'Unknown')}
-                </div>
-                <div style="font-size: 12px; color: var(--accent); margin-top: 2px;">
-                  Best for: ${escapeHtml(vendor.best_fit || 'General use')}
-                </div>
-              </div>
-              ${vendor.match_score ? `
-              <div style="text-align: right;">
-                <div style="font-size: 20px; font-weight: 700; color: ${vendor.match_score >= 85 ? '#5df4d7' : vendor.match_score >= 70 ? '#9bc2ff' : '#ffc187'};">
-                  ${vendor.match_score}
-                </div>
-                <div style="font-size: 10px; color: var(--muted);">Score</div>
-              </div>
-              ` : ''}
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
-              <div>
-                <div style="font-size: 11px; font-weight: 600; color: #5df4d7; margin-bottom: 6px;">✓ PROS</div>
-                ${pros.length > 0 ? pros.map(p => `<div style="font-size: 12px; color: var(--muted); margin-bottom: 3px;">• ${escapeHtml(p)}</div>`).join('') : '<div style="font-size: 12px; color: var(--muted);">None listed</div>'}
-              </div>
-              <div>
-                <div style="font-size: 11px; font-weight: 600; color: #ff8b8b; margin-bottom: 6px;">✗ CONS</div>
-                ${cons.length > 0 ? cons.map(c => `<div style="font-size: 12px; color: var(--muted); margin-bottom: 3px;">• ${escapeHtml(c)}</div>`).join('') : '<div style="font-size: 12px; color: var(--muted);">None listed</div>'}
-              </div>
-            </div>
-            
-            <div class="kv" style="margin-bottom: 10px;">
-              <div><strong style="font-size: 11px;">Availability</strong><br><span class="muted" style="font-size: 12px;">${escapeHtml(vendor.availability_notes || 'N/A')}</span></div>
-              <div><strong style="font-size: 11px;">Cost</strong><br><span class="muted" style="font-size: 12px;">${escapeHtml(vendor.cost_notes || 'N/A')}</span></div>
-            </div>
-            
-            ${riskFlags.length > 0 ? `
-            <div style="margin-bottom: 10px;">
-              <div style="font-size: 11px; font-weight: 600; color: var(--warn); margin-bottom: 4px;">⚠️ Risk Flags</div>
-              ${riskFlags.map(r => `<span class="badge" style="background: rgba(255, 182, 91, 0.15); color: #ffc187;">${escapeHtml(r)}</span>`).join('')}
-            </div>
-            ` : ''}
-            
-            <div style="background: rgba(91, 141, 255, 0.08); border-radius: 8px; padding: 10px;">
-              <div style="font-size: 12px; line-height: 1.5; color: var(--muted);">
-                ${escapeHtml(vendor.overall_take || '')}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      // Build side-by-side comparison table
-      let comparisonHtml = '';
-      if (sideBySide.rows && sideBySide.rows.length > 0) {
-        comparisonHtml = `
-          <div style="margin-top: 16px; overflow-x: auto;">
-            <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">📋 Side-by-Side Comparison</div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-              <thead>
-                <tr style="background: rgba(255,255,255,0.05);">
-                  <th style="padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">Vendor</th>
-                  <th style="padding: 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">Score</th>
-                  <th style="padding: 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">Availability</th>
-                  <th style="padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">Cost</th>
-                  <th style="padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">Best For</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${sideBySide.rows.map((row, idx) => `
-                  <tr style="background: ${idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: 500;">
-                      ${escapeHtml(row.vendor_id || '')}
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                      <span style="color: ${(row.match_score || 0) >= 85 ? '#5df4d7' : (row.match_score || 0) >= 70 ? '#9bc2ff' : '#ffc187'}; font-weight: 600;">
-                        ${row.match_score || 'N/A'}
-                      </span>
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                      ${escapeHtml(row.availability || 'N/A')}
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                      ${escapeHtml(row.cost_range || 'N/A')}
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                      ${escapeHtml(row.best_for || 'N/A')}
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }
-      
-      // Build stakeholder messages
-      let messagesHtml = '';
-      if (messages.pm || messages.tenant) {
-        messagesHtml = `
-          <div style="margin-top: 16px;">
-            <div style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">💬 Stakeholder Messages</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              ${messages.pm ? `
-              <div style="background: rgba(91, 141, 255, 0.1); border: 1px solid rgba(91, 141, 255, 0.3); border-radius: 10px; padding: 12px;">
-                <div style="font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 6px;">📋 FOR PROPERTY MANAGER</div>
-                <div style="font-size: 13px; color: var(--text); line-height: 1.5;">${escapeHtml(messages.pm)}</div>
-              </div>
-              ` : ''}
-              ${messages.tenant ? `
-              <div style="background: rgba(93, 244, 215, 0.1); border: 1px solid rgba(93, 244, 215, 0.3); border-radius: 10px; padding: 12px;">
-                <div style="font-size: 11px; color: #5df4d7; font-weight: 600; margin-bottom: 6px;">🏠 FOR TENANT</div>
-                <div style="font-size: 13px; color: var(--text); line-height: 1.5;">${escapeHtml(messages.tenant)}</div>
-              </div>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      }
-      
-      vendorExplanationCard.innerHTML = `
-        <h3>Vendor Analysis & Comparison 📊 ${summary.confidence ? pill('Confidence: ' + escapeHtml(summary.confidence), 'route') : ''}</h3>
-        ${summary.notes ? `<div class="muted" style="margin-bottom: 12px;">${escapeHtml(summary.notes)}</div>` : ''}
-        
-        ${summaryHtml}
-        ${explanationsHtml}
-        ${comparisonHtml}
-        ${messagesHtml}
-      `;
+    // Start over
+    startOverBtn.addEventListener('click', () => location.reload());
+
+    // Escape HTML
+    function esc(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
   </script>
 </body>
