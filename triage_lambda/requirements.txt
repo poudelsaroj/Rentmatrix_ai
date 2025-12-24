@@ -1,0 +1,22 @@
+# RentMatrix AI Triage Lambda - Dependencies
+
+# Core AI Framework
+agents>=0.1.0
+
+# HTTP Requests
+requests>=2.31.0
+httpx>=0.25.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# JSON Processing (built-in but explicit for clarity)
+# json - built-in
+
+# Async Support
+asyncio-compat>=0.1.0
+
+# AWS Lambda Runtime (provided by Lambda environment)
+# boto3 - provided by Lambda
+# botocore - provided by Lambda
+
