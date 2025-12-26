@@ -12,6 +12,13 @@ from .vendor_models import (
     TimeSlot,
     TradeCategory
 )
+from .quotation_models import (
+    Quotation,
+    QuotationData,
+    QuotationStatus,
+    QuotationComparison,
+    VendorQuotationSummary
+)
 
 __all__ = [
     "Vendor",
@@ -21,8 +28,14 @@ __all__ = [
     "VendorRating",
     "VendorPricing",
     "TimeSlot",
-    "TradeCategory"
+    "TradeCategory",
+    "Quotation",
+    "QuotationData",
+    "QuotationStatus",
+    "QuotationComparison",
+    "VendorQuotationSummary"
 ]
+
 
 
 

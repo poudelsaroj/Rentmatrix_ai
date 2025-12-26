@@ -38,7 +38,15 @@ load_dotenv()
 
 from agent import DEFAULT_AGENT_CONFIG, TriagePipeline  # noqa: E402
 from agent.core_agents.vendor_assignment import assign_vendors_simple  # noqa: E402
+from agent.core_agents.quotation_analysis_agent import QuotationAnalysisAgent  # noqa: E402
+from agent.core_agents.quotation_comparison_agent import QuotationComparisonAgent  # noqa: E402
+from agent.models.quotation_models import (  # noqa: E402
+    Quotation, QuotationData, QuotationStatus, QuotationComparison
+)
 from api.weather_service import get_weather_for_triage  # noqa: E402
+from api.quotation_utils import (  # noqa: E402
+    validate_images, generate_quotation_id
+)
 
 
 # ==================== Request/Response Models ====================
@@ -106,6 +114,37 @@ class VendorAssignmentResponse(BaseModel):
     error: Optional[str] = None
 
 
+class QuotationSubmitRequest(BaseModel):
+    """Request to submit a vendor quotation."""
+    request_id: str = Field(..., description="Maintenance request ID")
+    vendor_id: str = Field(..., description="Vendor ID submitting the quotation")
+    images: List[str] = Field(..., description="List of base64-encoded images or data URIs", min_items=1)
+    vendor_notes: Optional[str] = Field(None, description="Optional text notes from vendor")
+
+
+class QuotationSubmitResponse(BaseModel):
+    """Response from quotation submission."""
+    quotation_id: str
+    status: str
+    extracted_data: Optional[Dict[str, Any]] = None
+    confidence: float = 0.0
+    extraction_errors: List[str] = []
+
+
+class QuotationCompareRequest(BaseModel):
+    """Request to compare three quotations."""
+    request_id: str = Field(..., description="Maintenance request ID")
+    quotation_ids: List[str] = Field(..., description="List of exactly 3 quotation IDs to compare", min_items=3, max_items=3)
+    vendor_names: Optional[Dict[str, str]] = Field(None, description="Optional mapping of vendor_id to company_name")
+
+
+class QuotationCompareResponse(BaseModel):
+    """Response from quotation comparison."""
+    request_id: str
+    comparison: Dict[str, Any]
+    confidence: float
+
+
 # ==================== FastAPI App ====================
 
 app = FastAPI(
@@ -113,9 +152,10 @@ app = FastAPI(
     description=(
         "Maintenance triage and priority scoring via RentMatrix AI agents.\n\n"
         "**Pipeline (Agents 1-5):** Triage -> Priority -> Explainer -> Confidence -> SLA\n\n"
-        "**Vendor Assignment:** Separate endpoint with simple round-robin (no LLM)"
+        "**Vendor Assignment:** Separate endpoint with simple round-robin (no LLM)\n\n"
+        "**Quotation Comparison:** Analyze and compare vendor quotations (vision + LLM)"
     ),
-    version="2.0.0",
+    version="2.1.0",
 )
 
 app.add_middleware(
@@ -141,6 +181,13 @@ pipeline = TriagePipeline(
     confidence_model="gpt-5-mini",
     verbose=False,
 )
+
+# Quotation analysis and comparison agents
+quotation_analysis_agent = QuotationAnalysisAgent(vision_model="gpt-5")
+quotation_comparison_agent = QuotationComparisonAgent(model="gpt-5-mini")
+
+# In-memory quotation storage (for MVP - replace with database in production)
+quotation_storage: Dict[str, Quotation] = {}
 
 # Default request template
 DEFAULT_REQUEST_TEMPLATE: Dict[str, Any] = {
@@ -339,6 +386,169 @@ async def assign_vendors(request: VendorAssignmentRequest) -> Dict[str, Any]:
     )
 
     return result
+
+
+@app.post("/quotation/submit", response_model=QuotationSubmitResponse)
+async def submit_quotation(request: QuotationSubmitRequest) -> Dict[str, Any]:
+    """
+    Submit a vendor quotation with images for analysis.
+    
+    **Flow:**
+    1. Validate image formats
+    2. Analyze images using vision model to extract structured data
+    3. Store quotation with extracted data
+    4. Return quotation ID and extracted data
+    
+    **Input:**
+    - `request_id`: Maintenance request ID
+    - `vendor_id`: Vendor submitting the quotation
+    - `images`: List of base64-encoded images or data URIs
+    - `vendor_notes`: Optional text notes
+    
+    **Output:**
+    - Quotation ID
+    - Extracted structured data (price, timeline, warranty, etc.)
+    - Confidence score
+    """
+    # Validate images
+    is_valid, error_msg, normalized_images = validate_images(request.images)
+    if not is_valid:
+        raise HTTPException(400, f"Image validation failed: {error_msg}")
+    
+    # Generate quotation ID
+    quotation_id = generate_quotation_id()
+    
+    # Create quotation object
+    quotation = Quotation(
+        quotation_id=quotation_id,
+        request_id=request.request_id,
+        vendor_id=request.vendor_id,
+        images=normalized_images,
+        vendor_notes=request.vendor_notes,
+        status=QuotationStatus.ANALYZING
+    )
+    
+    try:
+        # Analyze images
+        extracted_data_dict = await quotation_analysis_agent.analyze_quotation_images(
+            images=normalized_images,
+            request_id=request.request_id,
+            vendor_notes=request.vendor_notes
+        )
+        
+        # Create QuotationData object
+        quotation_data = QuotationData(
+            total_price=extracted_data_dict.get("total_price"),
+            currency=extracted_data_dict.get("currency", "USD"),
+            timeline_days=extracted_data_dict.get("timeline_days"),
+            timeline_description=extracted_data_dict.get("timeline_description"),
+            materials=extracted_data_dict.get("materials", []),
+            warranty_months=extracted_data_dict.get("warranty_months"),
+            warranty_description=extracted_data_dict.get("warranty_description"),
+            payment_terms=extracted_data_dict.get("payment_terms"),
+            special_conditions=extracted_data_dict.get("special_conditions", []),
+            notes=extracted_data_dict.get("notes") or request.vendor_notes,
+            labor_cost=extracted_data_dict.get("labor_cost"),
+            materials_cost=extracted_data_dict.get("materials_cost"),
+            tax_amount=extracted_data_dict.get("tax_amount")
+        )
+        
+        # Update quotation
+        quotation.extracted_data = quotation_data
+        quotation.status = QuotationStatus.ANALYZED
+        quotation.confidence = extracted_data_dict.get("confidence", 0.0)
+        quotation.extraction_errors = extracted_data_dict.get("extraction_errors", [])
+        
+        # Store quotation
+        quotation_storage[quotation_id] = quotation
+        
+        return {
+            "quotation_id": quotation_id,
+            "status": quotation.status.value,
+            "extracted_data": quotation_data.to_dict(),
+            "confidence": quotation.confidence,
+            "extraction_errors": quotation.extraction_errors
+        }
+        
+    except Exception as exc:
+        # Mark as failed
+        quotation.status = QuotationStatus.FAILED
+        quotation.extraction_errors = [str(exc)]
+        quotation_storage[quotation_id] = quotation
+        
+        raise HTTPException(500, f"Quotation analysis failed: {str(exc)}") from exc
+
+
+@app.post("/quotation/compare", response_model=QuotationCompareResponse)
+async def compare_quotations(request: QuotationCompareRequest) -> Dict[str, Any]:
+    """
+    Compare three vendor quotations and get recommendation.
+    
+    **Flow:**
+    1. Retrieve three quotations by ID
+    2. Compare using comparison agent (price-focused)
+    3. Generate recommendation with reasoning
+    4. Return comparison results
+    
+    **Input:**
+    - `request_id`: Maintenance request ID
+    - `quotation_ids`: Exactly 3 quotation IDs to compare
+    - `vendor_names`: Optional mapping of vendor_id to company_name
+    
+    **Output:**
+    - Ranked vendor quotations
+    - Comparison summary (lowest price, fastest timeline, etc.)
+    - Recommendation with reasoning
+    - Red flags (if any)
+    """
+    # Validate that we have exactly 3 quotation IDs
+    if len(request.quotation_ids) != 3:
+        raise HTTPException(400, "Exactly 3 quotation IDs are required")
+    
+    # Retrieve quotations
+    quotations = []
+    for qid in request.quotation_ids:
+        if qid not in quotation_storage:
+            raise HTTPException(404, f"Quotation {qid} not found")
+        quotations.append(quotation_storage[qid])
+    
+    # Validate all quotations are for the same request
+    request_ids = {q.request_id for q in quotations}
+    if len(request_ids) > 1:
+        raise HTTPException(400, "All quotations must be for the same request")
+    
+    if request_ids.pop() != request.request_id:
+        raise HTTPException(400, "Quotation request IDs do not match")
+    
+    # Get vendor names (use provided mapping or try to get from mock vendors)
+    vendor_names = request.vendor_names or {}
+    
+    # Try to get vendor names from mock vendors if not provided
+    if not vendor_names:
+        try:
+            from agent.data.mock_vendors import MOCK_VENDORS
+            for vendor in MOCK_VENDORS:
+                if vendor.vendor_id in [q.vendor_id for q in quotations]:
+                    vendor_names[vendor.vendor_id] = vendor.company_name
+        except Exception:
+            pass  # If mock vendors not available, use vendor_id as name
+    
+    # Ensure all vendors have names
+    for quotation in quotations:
+        if quotation.vendor_id not in vendor_names:
+            vendor_names[quotation.vendor_id] = quotation.vendor_id
+    
+    try:
+        # Compare quotations
+        comparison = await quotation_comparison_agent.compare_quotations(
+            quotations=quotations,
+            vendor_names=vendor_names
+        )
+        
+        return comparison.to_dict()
+        
+    except Exception as exc:
+        raise HTTPException(500, f"Quotation comparison failed: {str(exc)}") from exc
 
 
 @app.on_event("shutdown")

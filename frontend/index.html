@@ -346,6 +346,71 @@
       <button class="secondary" id="start-over" style="width: 100%;">Submit Another Request</button>
     </div>
 
+    <!-- Quotation Workflow -->
+    <div class="panel" id="quotation-panel">
+      <h2>Vendor Quotations (Image Upload + Comparison)</h2>
+      <p class="muted" style="margin-top: -10px; margin-bottom: 16px;">
+        Vendors can upload quotation images. Analyze them, store the IDs, then compare any three to get a recommendation.
+      </p>
+
+      <div class="row" style="gap: 16px;">
+        <!-- Submit Quotation -->
+        <div>
+          <h3 style="margin-top:0;">1) Submit Quotation</h3>
+          <label>Request ID *</label>
+          <input id="quote-request-id" type="text" placeholder="REQ-2024-001">
+
+          <label>Vendor ID *</label>
+          <input id="quote-vendor-id" type="text" placeholder="VND-PL-001">
+
+          <label>Vendor Notes (optional)</label>
+          <textarea id="quote-vendor-notes" placeholder="Any notes from vendor"></textarea>
+
+          <label>Quotation Images (PNG/JPG, up to 10)</label>
+          <input id="quote-images" type="file" accept="image/*" multiple>
+
+          <button class="primary" id="quote-submit-btn" style="margin-top: 8px;">Analyze Quotation</button>
+          <div class="status" id="quote-submit-status"></div>
+
+          <div class="result-card" id="quote-submit-result" style="margin-top:12px; display:none;">
+            <h3>Submission Saved</h3>
+            <p id="quote-result-id"></p>
+            <p id="quote-result-price"></p>
+            <p id="quote-result-timeline"></p>
+            <p id="quote-result-warranty"></p>
+          </div>
+        </div>
+
+        <!-- Compare Quotations -->
+        <div>
+          <h3 style="margin-top:0;">2) Compare 3 Quotations</h3>
+          <label>Request ID *</label>
+          <input id="compare-request-id" type="text" placeholder="REQ-2024-001">
+
+          <label>Quotation IDs (pick 3)</label>
+          <input id="compare-id-1" type="text" placeholder="QUO-XXXXXX">
+          <input id="compare-id-2" type="text" placeholder="QUO-XXXXXX">
+          <input id="compare-id-3" type="text" placeholder="QUO-XXXXXX">
+
+          <button class="primary" id="compare-btn" style="margin-top: 8px;">Compare Quotations</button>
+          <div class="status" id="compare-status"></div>
+
+          <div class="result-card" id="compare-result" style="margin-top:12px; display:none;">
+            <h3>Recommendation</h3>
+            <p id="compare-recommend"></p>
+            <p id="compare-summary"></p>
+            <p id="compare-flags" class="muted"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="info-box" id="quote-stored-list" style="display:none;">
+        <strong>Stored Quotations:</strong>
+        <div id="quote-list-body" style="margin-top:8px; font-size:12px;"></div>
+      </div>
+    </div>
+
     <!-- API Config (collapsible) -->
     <details style="margin-top: 20px;">
       <summary style="cursor: pointer; color: var(--muted); font-size: 12px;">API Settings</summary>
@@ -361,6 +426,7 @@
     let currentTrade = null;
     let triageData = null;
     let locationMode = 'text';
+    let storedQuotations = []; // {quotation_id, request_id, vendor_id, extracted_data}
 
     // Mock vendors (in real app, these come from backend)
     const mockVendors = [
@@ -453,6 +519,33 @@
     const time1El = document.getElementById('time1');
     const time2El = document.getElementById('time2');
     const time3El = document.getElementById('time3');
+
+    // Quotation elements
+    const quoteRequestIdEl = document.getElementById('quote-request-id');
+    const quoteVendorIdEl = document.getElementById('quote-vendor-id');
+    const quoteVendorNotesEl = document.getElementById('quote-vendor-notes');
+    const quoteImagesEl = document.getElementById('quote-images');
+    const quoteSubmitBtn = document.getElementById('quote-submit-btn');
+    const quoteSubmitStatus = document.getElementById('quote-submit-status');
+    const quoteSubmitResult = document.getElementById('quote-submit-result');
+    const quoteResultId = document.getElementById('quote-result-id');
+    const quoteResultPrice = document.getElementById('quote-result-price');
+    const quoteResultTimeline = document.getElementById('quote-result-timeline');
+    const quoteResultWarranty = document.getElementById('quote-result-warranty');
+
+    const compareRequestIdEl = document.getElementById('compare-request-id');
+    const compareId1El = document.getElementById('compare-id-1');
+    const compareId2El = document.getElementById('compare-id-2');
+    const compareId3El = document.getElementById('compare-id-3');
+    const compareBtn = document.getElementById('compare-btn');
+    const compareStatus = document.getElementById('compare-status');
+    const compareResult = document.getElementById('compare-result');
+    const compareRecommend = document.getElementById('compare-recommend');
+    const compareSummary = document.getElementById('compare-summary');
+    const compareFlags = document.getElementById('compare-flags');
+
+    const quoteStoredList = document.getElementById('quote-stored-list');
+    const quoteListBody = document.getElementById('quote-list-body');
 
     // Location functions
     function setLocationMode(mode) {
@@ -654,6 +747,167 @@
         `;
       }).join('');
     }
+
+    // Quotation helpers
+    function renderStoredQuotations() {
+      if (!storedQuotations.length) {
+        quoteStoredList.style.display = 'none';
+        quoteListBody.innerHTML = '';
+        return;
+      }
+      quoteStoredList.style.display = 'block';
+      quoteListBody.innerHTML = storedQuotations.map(q => {
+        const price = q.extracted_data?.total_price != null ? `$${q.extracted_data.total_price}` : 'n/a';
+        const timeline = q.extracted_data?.timeline_description || (q.extracted_data?.timeline_days ? `${q.extracted_data.timeline_days} days` : 'n/a');
+        return `<div>• <strong>${esc(q.quotation_id)}</strong> | req ${esc(q.request_id)} | vendor ${esc(q.vendor_id)} | price ${esc(price)} | timeline ${esc(timeline)}</div>`;
+      }).join('');
+    }
+
+    function updateComparisonFieldsDefaults(requestId) {
+      if (requestId) {
+        compareRequestIdEl.value = requestId;
+      }
+      if (storedQuotations.length >= 3) {
+        compareId1El.value = storedQuotations[storedQuotations.length - 3].quotation_id;
+        compareId2El.value = storedQuotations[storedQuotations.length - 2].quotation_id;
+        compareId3El.value = storedQuotations[storedQuotations.length - 1].quotation_id;
+      }
+    }
+
+    function fileListToBase64(fileList) {
+      const files = Array.from(fileList || []);
+      return Promise.all(files.map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      })));
+    }
+
+    // Submit quotation
+    quoteSubmitBtn.addEventListener('click', async () => {
+      const requestId = quoteRequestIdEl.value.trim();
+      const vendorId = quoteVendorIdEl.value.trim();
+      const notes = quoteVendorNotesEl.value.trim();
+      const files = quoteImagesEl.files;
+
+      if (!requestId || !vendorId) {
+        quoteSubmitStatus.textContent = 'Request ID and Vendor ID are required.';
+        quoteSubmitStatus.className = 'status error';
+        return;
+      }
+      if (!files || files.length === 0) {
+        quoteSubmitStatus.textContent = 'Please attach at least one image.';
+        quoteSubmitStatus.className = 'status error';
+        return;
+      }
+
+      quoteSubmitBtn.disabled = true;
+      quoteSubmitStatus.textContent = 'Uploading & analyzing...';
+      quoteSubmitStatus.className = 'status';
+
+      try {
+        const base64Images = await fileListToBase64(files);
+        const res = await fetch(`${apiUrlEl.value}/quotation/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            request_id: requestId,
+            vendor_id: vendorId,
+            vendor_notes: notes || undefined,
+            images: base64Images
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed');
+
+        quoteSubmitStatus.textContent = 'Quotation analyzed successfully.';
+        quoteSubmitStatus.className = 'status success';
+
+        // Show result
+        quoteSubmitResult.style.display = 'block';
+        quoteResultId.textContent = `Quotation ID: ${data.quotation_id}`;
+        quoteResultPrice.textContent = `Total Price: ${data.extracted_data?.total_price ?? 'n/a'} ${data.extracted_data?.currency || ''}`.trim();
+        quoteResultTimeline.textContent = `Timeline: ${data.extracted_data?.timeline_description || data.extracted_data?.timeline_days || 'n/a'}`;
+        quoteResultWarranty.textContent = `Warranty: ${data.extracted_data?.warranty_description || data.extracted_data?.warranty_months || 'n/a'}`;
+
+        // Store locally
+        storedQuotations.push({
+          quotation_id: data.quotation_id,
+          request_id: requestId,
+          vendor_id: vendorId,
+          extracted_data: data.extracted_data || {}
+        });
+        renderStoredQuotations();
+        updateComparisonFieldsDefaults(requestId);
+      } catch (err) {
+        quoteSubmitStatus.textContent = `Error: ${err.message}`;
+        quoteSubmitStatus.className = 'status error';
+      } finally {
+        quoteSubmitBtn.disabled = false;
+      }
+    });
+
+    // Compare quotations
+    compareBtn.addEventListener('click', async () => {
+      const requestId = compareRequestIdEl.value.trim();
+      const ids = [compareId1El.value.trim(), compareId2El.value.trim(), compareId3El.value.trim()].filter(Boolean);
+
+      if (!requestId) {
+        compareStatus.textContent = 'Request ID is required.';
+        compareStatus.className = 'status error';
+        return;
+      }
+      if (ids.length !== 3) {
+        compareStatus.textContent = 'Please enter exactly 3 quotation IDs.';
+        compareStatus.className = 'status error';
+        return;
+      }
+
+      compareBtn.disabled = true;
+      compareStatus.textContent = 'Comparing...';
+      compareStatus.className = 'status';
+
+      // Build vendor name map from stored quotations if available
+      const vendorNames = {};
+      storedQuotations.forEach(q => {
+        if (ids.includes(q.quotation_id)) {
+          vendorNames[q.vendor_id] = q.vendor_id; // minimal; could be enhanced
+        }
+      });
+
+      try {
+        const res = await fetch(`${apiUrlEl.value}/quotation/compare`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            request_id: requestId,
+            quotation_ids: ids,
+            vendor_names: Object.keys(vendorNames).length ? vendorNames : undefined
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed');
+
+        compareStatus.textContent = 'Comparison complete.';
+        compareStatus.className = 'status success';
+
+        compareResult.style.display = 'block';
+        const rec = data.comparison?.recommendation || {};
+        const summary = data.comparison?.summary || {};
+        compareRecommend.textContent = `Recommended Vendor: ${rec.recommended_vendor_id || 'n/a'} (confidence ${(rec.confidence ?? data.confidence ?? 0).toFixed(2)})`;
+        compareSummary.textContent = `Price range: ${summary.price_range ? `$${summary.price_range.min} - $${summary.price_range.max}` : 'n/a'} | Lowest: ${summary.lowest_price || 'n/a'} | Fastest: ${summary.fastest_timeline || 'n/a'} | Best warranty: ${summary.best_warranty || 'n/a'}`;
+        const flags = data.comparison?.red_flags || [];
+        compareFlags.textContent = flags.length ? `Red flags: ${flags.join(', ')}` : 'No red flags.';
+
+      } catch (err) {
+        compareStatus.textContent = `Error: ${err.message}`;
+        compareStatus.className = 'status error';
+        compareResult.style.display = 'none';
+      } finally {
+        compareBtn.disabled = false;
+      }
+    });
 
     // Start over
     startOverBtn.addEventListener('click', () => location.reload());

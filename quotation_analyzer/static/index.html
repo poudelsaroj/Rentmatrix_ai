@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Analyzer - Compare 3 Vendor Quotes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .toggle-label.active {
+            color: #667eea;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 80px;
+            height: 40px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4CAF50;
+            transition: 0.4s;
+            border-radius: 40px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 32px;
+            width: 32px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(40px);
+        }
+
+        .method-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .method-ocr {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .method-llm {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* Upload Cards */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vendor-number {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .upload-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        .upload-zone:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-zone.has-image {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #666;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* Submit Button */
+        .submit-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Results */
+        .results-container {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .results-header h2 {
+            color: #333;
+        }
+
+        /* Recommendation Box */
+        .recommendation-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .recommendation-box h3 {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .recommendation-box .winner {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .recommendation-box .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .recommendation-box .reason {
+            margin-top: 15px;
+            opacity: 0.9;
+        }
+
+        /* Vendor Rankings */
+        .rankings {
+            margin-bottom: 25px;
+        }
+
+        .rankings h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .ranking-item.first {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 15px;
+        }
+
+        .rank-1 { background: #ffd700; color: #333; }
+        .rank-2 { background: #c0c0c0; color: #333; }
+        .rank-3 { background: #cd7f32; color: white; }
+
+        .vendor-info {
+            flex: 1;
+        }
+
+        .vendor-info .name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .vendor-info .details {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .vendor-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* Summary */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-card .label {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .summary-card .value {
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Red Flags */
+        .red-flags {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+        }
+
+        .red-flags h4 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .red-flags ul {
+            margin-left: 20px;
+            color: #666;
+        }
+
+        .red-flags li {
+            margin-bottom: 5px;
+        }
+
+        /* Confidence */
+        .confidence-bar {
+            margin-top: 20px;
+        }
+
+        .confidence-bar label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+
+        /* Error */
+        .error-box {
+            display: none;
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+            color: #c62828;
+        }
+
+        .error-box.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Quotation Analyzer</h1>
+            <p>Upload 3 vendor quotation photos to compare prices and get recommendations</p>
+        </header>
+
+        <!-- Toggle Switch -->
+        <div class="toggle-container">
+            <span class="toggle-label" id="ocr-label">OCR (Tesseract)</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="llm-toggle">
+                <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label" id="llm-label">LLM (gpt-5 Vision)</span>
+            <span class="method-badge method-ocr" id="method-badge">Using: OCR</span>
+        </div>
+
+        <!-- Upload Cards -->
+        <div class="upload-grid">
+            <div class="upload-card">
+                <h3><span class="vendor-number">1</span> Vendor 1</h3>
+                <div class="input-group">
+                    <label>Vendor Name</label>
+                    <input type="text" id="vendor1-name" placeholder="e.g., ABC Plumbing Co.">
+                </div>
+                <div class="upload-zone" onclick="document.getElementById('file1').click()">
+                    <input type="file" id="file1" accept="image/*" onchange="handleFileSelect(1, this)">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Click to upload quotation image</div>
+                    <img id="preview1" class="preview-image" style="display:none;">
+                </div>
+            </div>
+
+            <div class="upload-card">
+                <h3><span class="vendor-number">2</span> Vendor 2</h3>
+                <div class="input-group">
+                    <label>Vendor Name</label>
+                    <input type="text" id="vendor2-name" placeholder="e.g., QuickFix Services">
+                </div>
+                <div class="upload-zone" onclick="document.getElementById('file2').click()">
+                    <input type="file" id="file2" accept="image/*" onchange="handleFileSelect(2, this)">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Click to upload quotation image</div>
+                    <img id="preview2" class="preview-image" style="display:none;">
+                </div>
+            </div>
+
+            <div class="upload-card">
+                <h3><span class="vendor-number">3</span> Vendor 3</h3>
+                <div class="input-group">
+                    <label>Vendor Name</label>
+                    <input type="text" id="vendor3-name" placeholder="e.g., ProRepair Ltd.">
+                </div>
+                <div class="upload-zone" onclick="document.getElementById('file3').click()">
+                    <input type="file" id="file3" accept="image/*" onchange="handleFileSelect(3, this)">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Click to upload quotation image</div>
+                    <img id="preview3" class="preview-image" style="display:none;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="submit-container">
+            <button class="submit-btn" onclick="analyzeQuotations()">
+                Analyze & Compare Quotations
+            </button>
+        </div>
+
+        <!-- Error Box -->
+        <div class="error-box" id="error-box"></div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing quotations... Please wait.</p>
+        </div>
+
+        <!-- Results -->
+        <div class="results-container" id="results">
+            <div class="results-header">
+                <h2>Comparison Results</h2>
+                <span class="method-badge" id="result-method"></span>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="recommendation-box" id="recommendation">
+                <h3>RECOMMENDED VENDOR</h3>
+                <div class="winner" id="winner-name">-</div>
+                <div class="price" id="winner-price">-</div>
+                <div class="reason" id="winner-reason">-</div>
+            </div>
+
+            <!-- Rankings -->
+            <div class="rankings">
+                <h3>Vendor Rankings</h3>
+                <div id="rankings-list"></div>
+            </div>
+
+            <!-- Summary -->
+            <div class="summary-grid" id="summary-grid"></div>
+
+            <!-- Red Flags -->
+            <div class="red-flags" id="red-flags" style="display:none;">
+                <h4>Potential Concerns</h4>
+                <ul id="red-flags-list"></ul>
+            </div>
+
+            <!-- Confidence -->
+            <div class="confidence-bar">
+                <label>Extraction Confidence: <span id="confidence-value">0%</span></label>
+                <div class="bar-container">
+                    <div class="bar-fill" id="confidence-fill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store file data
+        const files = { 1: null, 2: null, 3: null };
+
+        // Toggle handling
+        const llmToggle = document.getElementById('llm-toggle');
+        const ocrLabel = document.getElementById('ocr-label');
+        const llmLabel = document.getElementById('llm-label');
+        const methodBadge = document.getElementById('method-badge');
+
+        llmToggle.addEventListener('change', function() {
+            if (this.checked) {
+                ocrLabel.classList.remove('active');
+                llmLabel.classList.add('active');
+                methodBadge.textContent = 'Using: LLM';
+                methodBadge.className = 'method-badge method-llm';
+            } else {
+                ocrLabel.classList.add('active');
+                llmLabel.classList.remove('active');
+                methodBadge.textContent = 'Using: OCR';
+                methodBadge.className = 'method-badge method-ocr';
+            }
+        });
+
+        // Initialize
+        ocrLabel.classList.add('active');
+
+        // File handling
+        function handleFileSelect(num, input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            files[num] = file;
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById(`preview${num}`);
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+
+                // Update zone style
+                input.parentElement.classList.add('has-image');
+                input.parentElement.querySelector('.upload-icon').textContent = '✅';
+                input.parentElement.querySelector('.upload-text').textContent = file.name;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Convert file to base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Analyze quotations
+        async function analyzeQuotations() {
+            // Validate inputs
+            const vendor1Name = document.getElementById('vendor1-name').value.trim() || 'Vendor 1';
+            const vendor2Name = document.getElementById('vendor2-name').value.trim() || 'Vendor 2';
+            const vendor3Name = document.getElementById('vendor3-name').value.trim() || 'Vendor 3';
+
+            if (!files[1] || !files[2] || !files[3]) {
+                showError('Please upload all 3 quotation images');
+                return;
+            }
+
+            // Show loading
+            hideError();
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').classList.remove('active');
+
+            try {
+                // Convert files to base64
+                const [img1, img2, img3] = await Promise.all([
+                    fileToBase64(files[1]),
+                    fileToBase64(files[2]),
+                    fileToBase64(files[3])
+                ]);
+
+                // Build request
+                const request = {
+                    use_llm: llmToggle.checked,
+                    quotations: [
+                        { vendor_id: 'V1', vendor_name: vendor1Name, image: img1 },
+                        { vendor_id: 'V2', vendor_name: vendor2Name, image: img2 },
+                        { vendor_id: 'V3', vendor_name: vendor3Name, image: img3 }
+                    ]
+                };
+
+                // Call API
+                const response = await fetch('/compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'API request failed');
+                }
+
+                const result = await response.json();
+                displayResults(result);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.classList.add('active');
+
+            // Method badge
+            const methodBadge = document.getElementById('result-method');
+            if (data.extraction_method === 'llm') {
+                methodBadge.textContent = 'LLM Mode';
+                methodBadge.className = 'method-badge method-llm';
+            } else {
+                methodBadge.textContent = 'OCR Mode';
+                methodBadge.className = 'method-badge method-ocr';
+            }
+
+            // Recommendation
+            const rec = data.recommendation;
+            document.getElementById('winner-name').textContent = rec.recommended_vendor_name || 'Unable to determine';
+            document.getElementById('winner-price').textContent = rec.total_price
+                ? `$${rec.total_price.toFixed(2)}`
+                : '-';
+            document.getElementById('winner-reason').textContent = rec.reason || '';
+
+            // Rankings
+            const rankingsList = document.getElementById('rankings-list');
+            rankingsList.innerHTML = '';
+
+            data.ranked_vendors.forEach(vendor => {
+                const item = document.createElement('div');
+                item.className = `ranking-item ${vendor.rank === 1 ? 'first' : ''}`;
+                item.innerHTML = `
+                    <div class="rank-badge rank-${vendor.rank}">${vendor.rank}</div>
+                    <div class="vendor-info">
+                        <div class="name">${vendor.vendor_name}</div>
+                        <div class="details">
+                            ${vendor.timeline_days ? `${vendor.timeline_days} days` : 'No timeline'} |
+                            ${vendor.warranty_months ? `${vendor.warranty_months}mo warranty` : 'No warranty'} |
+                            Confidence: ${(vendor.confidence * 100).toFixed(0)}%
+                        </div>
+                    </div>
+                    <div class="vendor-price">${vendor.total_price ? '$' + vendor.total_price.toFixed(2) : 'N/A'}</div>
+                `;
+                rankingsList.appendChild(item);
+            });
+
+            // Summary
+            const summaryGrid = document.getElementById('summary-grid');
+            const summary = data.summary;
+            summaryGrid.innerHTML = `
+                <div class="summary-card">
+                    <div class="label">Lowest Price</div>
+                    <div class="value">${summary.lowest_price_vendor || '-'}<br>$${summary.lowest_price?.toFixed(2) || '-'}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Highest Price</div>
+                    <div class="value">${summary.highest_price_vendor || '-'}<br>$${summary.highest_price?.toFixed(2) || '-'}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Price Difference</div>
+                    <div class="value">${summary.price_difference_percent?.toFixed(1) || '0'}%</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Average Price</div>
+                    <div class="value">$${summary.average_price?.toFixed(2) || '-'}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Fastest Timeline</div>
+                    <div class="value">${summary.fastest_timeline_vendor || '-'}<br>${summary.fastest_timeline_days ? summary.fastest_timeline_days + ' days' : '-'}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Best Warranty</div>
+                    <div class="value">${summary.best_warranty_vendor || '-'}<br>${summary.best_warranty_months ? summary.best_warranty_months + ' months' : '-'}</div>
+                </div>
+            `;
+
+            // Red flags
+            const redFlagsDiv = document.getElementById('red-flags');
+            const redFlagsList = document.getElementById('red-flags-list');
+            if (data.red_flags && data.red_flags.length > 0) {
+                redFlagsDiv.style.display = 'block';
+                redFlagsList.innerHTML = data.red_flags.map(f => `<li>${f}</li>`).join('');
+            } else {
+                redFlagsDiv.style.display = 'none';
+            }
+
+            // Confidence
+            const confidence = data.overall_confidence * 100;
+            document.getElementById('confidence-value').textContent = confidence.toFixed(0) + '%';
+            document.getElementById('confidence-fill').style.width = confidence + '%';
+
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Error handling
+        function showError(message) {
+            const errorBox = document.getElementById('error-box');
+            errorBox.textContent = message;
+            errorBox.classList.add('active');
+        }
+
+        function hideError() {
+            document.getElementById('error-box').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
