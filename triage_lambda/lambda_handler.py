@@ -7,13 +7,16 @@ import json
 import os
 import asyncio
 from typing import Dict, Any
+from datetime import datetime
 import requests
 from dotenv import load_dotenv
+from dateutil import parser as date_parser
 
 from agent.core_agents.triage_agent import TriageAgent
 from agent.core_agents.priority_agent import PriorityAgent
 from agent.core_agents.explainer_agent import ExplainerAgent
 from agent.core_agents.confidence_agent import ConfidenceAgent
+from agent.core_agents.sla_mapper_agent import SLAMapperAgent
 
 # Load environment variables
 load_dotenv()
@@ -125,6 +128,21 @@ async def process_triage(maintenance_data: Dict[str, Any]) -> Dict[str, Any]:
     confidence_text = extract_result_text(confidence_result_raw)
     confidence_json = parse_json_result(confidence_text, "confidence")
     
+    # SLA Mapper Agent (deterministic, no LLM)
+    sla_mapper_agent = SLAMapperAgent()
+    priority_score = int(priority_json.get("priority_score", 0))
+    
+    # Get submission time from maintenance data or use current time
+    from dateutil import parser as date_parser
+    if maintenance_data.get("request", {}).get("reportedAt"):
+        submission_time = date_parser.isoparse(maintenance_data["request"]["reportedAt"])
+    else:
+        submission_time = datetime.utcnow()
+    
+    # Run SLA calculation (returns SLAResult object)
+    sla_result = sla_mapper_agent.run(priority_score, submission_time)
+    sla_mapper_json = sla_result.to_dict()
+    
     # Format final result
     final_result = {
         "dto": {
@@ -156,15 +174,15 @@ async def process_triage(maintenance_data: Dict[str, Any]) -> Dict[str, Any]:
                 "risk_flags": confidence_json.get("risk_flags", []),
                 "recommendation": confidence_json.get("recommendation")
             }),
-            "sla": {
-                "tier": None,
-                "responseDeadline": None,
-                "resolutionDeadline": None,
-                "responseHours": 0,
-                "resolutionHours": 0,
-                "businessHoursOnly": False,
-                "vendorTier": None
-            },
+            "sla": convert_keys_to_camel({
+                "tier": sla_mapper_json.get("tier"),
+                "response_deadline": sla_mapper_json.get("response_deadline"),
+                "resolution_deadline": sla_mapper_json.get("resolution_deadline"),
+                "response_hours": sla_mapper_json.get("response_hours", 0),
+                "resolution_hours": sla_mapper_json.get("resolution_hours", 0),
+                "business_hours_only": sla_mapper_json.get("business_hours_only", False),
+                "vendor_tier": sla_mapper_json.get("vendor_tier")
+            }),
             "weather": {
                 "temperature": 0,
                 "temperatureC": 0,
