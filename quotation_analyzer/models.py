@@ -15,6 +15,47 @@ class ExtractionMethod(str, Enum):
 
 
 @dataclass
+class TimeSlot:
+    """A time slot for maintenance availability."""
+    date: str  # Format: YYYY-MM-DD
+    start_time: str  # Format: HH:MM (24-hour)
+    end_time: str  # Format: HH:MM (24-hour)
+    
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "date": self.date,
+            "start_time": self.start_time,
+            "end_time": self.end_time
+        }
+    
+    def overlaps_with(self, other: 'TimeSlot') -> bool:
+        """Check if this time slot overlaps with another."""
+        if self.date != other.date:
+            return False
+        
+        # Parse times as minutes from midnight for easy comparison
+        def to_minutes(t: str) -> int:
+            h, m = map(int, t.split(':'))
+            return h * 60 + m
+        
+        self_start = to_minutes(self.start_time)
+        self_end = to_minutes(self.end_time)
+        other_start = to_minutes(other.start_time)
+        other_end = to_minutes(other.end_time)
+        
+        # Check for overlap
+        return self_start < other_end and other_start < self_end
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, str]) -> 'TimeSlot':
+        return cls(
+            date=data.get("date", ""),
+            start_time=data.get("start_time", ""),
+            end_time=data.get("end_time", "")
+        )
+
+
+@dataclass
 class QuotationResult:
     """Extracted data from a single quotation image."""
     vendor_name: Optional[str] = None
@@ -75,13 +116,19 @@ class VendorQuotation:
     image_base64: Optional[str] = None
     extracted_data: Optional[QuotationResult] = None
     rank: int = 0
+    available_slots: List[TimeSlot] = field(default_factory=list)  # 3 time slots from vendor
+    matching_slots: List[TimeSlot] = field(default_factory=list)   # Slots that match user availability
+    schedule_score: float = 0.0  # How well vendor schedule matches user
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "vendor_id": self.vendor_id,
             "vendor_name": self.vendor_name,
             "extracted_data": self.extracted_data.to_dict() if self.extracted_data else None,
-            "rank": self.rank
+            "rank": self.rank,
+            "available_slots": [s.to_dict() for s in self.available_slots],
+            "matching_slots": [s.to_dict() for s in self.matching_slots],
+            "schedule_score": self.schedule_score
         }
 
 
@@ -96,6 +143,8 @@ class ComparisonResult:
     extraction_method: ExtractionMethod = ExtractionMethod.OCR
     overall_confidence: float = 0.0
     processed_at: datetime = field(default_factory=datetime.utcnow)
+    user_available_slots: List[TimeSlot] = field(default_factory=list)  # User's availability
+    schedule_summary: Dict[str, Any] = field(default_factory=dict)  # Schedule matching summary
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -106,5 +155,7 @@ class ComparisonResult:
             "red_flags": self.red_flags,
             "extraction_method": self.extraction_method.value,
             "overall_confidence": self.overall_confidence,
-            "processed_at": self.processed_at.isoformat()
+            "processed_at": self.processed_at.isoformat(),
+            "user_available_slots": [s.to_dict() for s in self.user_available_slots],
+            "schedule_summary": self.schedule_summary
         }

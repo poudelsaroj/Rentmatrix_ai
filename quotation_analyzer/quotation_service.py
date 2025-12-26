@@ -9,7 +9,8 @@ from .models import (
     QuotationResult,
     VendorQuotation,
     ComparisonResult,
-    ExtractionMethod
+    ExtractionMethod,
+    TimeSlot
 )
 from .extractors.ocr_extractor import OCRExtractor
 from .extractors.llm_extractor import LLMExtractor
@@ -103,7 +104,8 @@ class QuotationService:
 
     async def analyze_and_compare(
         self,
-        quotations: List[Dict[str, Any]]
+        quotations: List[Dict[str, Any]],
+        user_available_slots: Optional[List[Dict[str, str]]] = None
     ) -> ComparisonResult:
         """
         Analyze and compare 3 vendor quotations.
@@ -113,12 +115,21 @@ class QuotationService:
                 - vendor_id: Unique vendor ID
                 - vendor_name: Company name
                 - image: Image data (path, base64, or bytes)
+                - available_slots: Optional list of 3 time slots (vendor availability)
+            user_available_slots: Optional list of user's available time slots
 
         Returns:
             ComparisonResult with ranked vendors and recommendation
         """
         if len(quotations) != 3:
             raise ValueError("Exactly 3 quotations are required")
+
+        # Parse user time slots
+        user_slots = []
+        if user_available_slots:
+            for slot_data in user_available_slots:
+                if slot_data.get("date") and slot_data.get("start_time") and slot_data.get("end_time"):
+                    user_slots.append(TimeSlot.from_dict(slot_data))
 
         # Analyze each quotation
         analyzed = []
@@ -128,24 +139,57 @@ class QuotationService:
                 vendor_id=q["vendor_id"],
                 vendor_name=q["vendor_name"]
             )
+            
+            # Parse vendor available time slots
+            vendor_slots_data = q.get("available_slots", [])
+            vendor_slots = []
+            for slot_data in vendor_slots_data:
+                if slot_data.get("date") and slot_data.get("start_time") and slot_data.get("end_time"):
+                    vendor_slots.append(TimeSlot.from_dict(slot_data))
+            vendor_quotation.available_slots = vendor_slots
+            
+            # Calculate matching slots with user
+            if user_slots and vendor_slots:
+                matching = self._find_matching_slots(user_slots, vendor_slots)
+                vendor_quotation.matching_slots = matching
+                vendor_quotation.schedule_score = len(matching) / max(len(user_slots), 1)
+            
             analyzed.append(vendor_quotation)
 
         # Compare and rank
-        comparison = self._compare_quotations(analyzed)
+        comparison = self._compare_quotations(analyzed, user_slots)
 
         return comparison
+    
+    def _find_matching_slots(
+        self,
+        user_slots: List[TimeSlot],
+        vendor_slots: List[TimeSlot]
+    ) -> List[TimeSlot]:
+        """Find time slots where user and vendor availability overlap."""
+        matching = []
+        for user_slot in user_slots:
+            for vendor_slot in vendor_slots:
+                if user_slot.overlaps_with(vendor_slot):
+                    # Return the vendor slot that matches
+                    matching.append(vendor_slot)
+                    break  # Count each vendor slot only once
+        return matching
 
     def _compare_quotations(
         self,
-        quotations: List[VendorQuotation]
+        quotations: List[VendorQuotation],
+        user_slots: Optional[List[TimeSlot]] = None
     ) -> ComparisonResult:
         """Compare quotations and generate recommendation."""
+        has_schedule_data = user_slots and any(q.available_slots for q in quotations)
+        
         # Calculate scores for ranking
         scored = []
         for q in quotations:
             data = q.extracted_data
             if data and data.total_price:
-                score = self._calculate_score(data)
+                score = self._calculate_score(data, q.schedule_score, has_schedule_data)
                 scored.append((q, score))
             else:
                 scored.append((q, float('inf')))  # No price = worst score
@@ -170,7 +214,11 @@ class QuotationService:
                 "timeline_days": data.timeline_days if data else None,
                 "warranty_months": data.warranty_months if data else None,
                 "score": score if score != float('inf') else None,
-                "confidence": data.confidence if data else 0.0
+                "confidence": data.confidence if data else 0.0,
+                "schedule_score": q.schedule_score,
+                "matching_slots_count": len(q.matching_slots),
+                "available_slots": [s.to_dict() for s in q.available_slots],
+                "matching_slots": [s.to_dict() for s in q.matching_slots]
             })
 
         # Generate summary
@@ -179,16 +227,19 @@ class QuotationService:
 
         summary = self._generate_summary(quotations, prices)
 
-        # Generate recommendation
-        recommendation = self._generate_recommendation(scored)
+        # Generate recommendation (now includes schedule info)
+        recommendation = self._generate_recommendation(scored, has_schedule_data)
 
-        # Identify red flags
-        red_flags = self._identify_red_flags(quotations)
+        # Identify red flags (now includes schedule issues)
+        red_flags = self._identify_red_flags(quotations, user_slots)
 
         # Calculate overall confidence
         confidences = [q.extracted_data.confidence for q in quotations
                        if q.extracted_data]
         overall_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+
+        # Generate schedule summary
+        schedule_summary = self._generate_schedule_summary(quotations, user_slots)
 
         return ComparisonResult(
             quotations=quotations,
@@ -197,33 +248,65 @@ class QuotationService:
             summary=summary,
             red_flags=red_flags,
             extraction_method=ExtractionMethod.LLM if self.use_llm else ExtractionMethod.OCR,
-            overall_confidence=overall_confidence
+            overall_confidence=overall_confidence,
+            user_available_slots=user_slots or [],
+            schedule_summary=schedule_summary
         )
 
-    def _calculate_score(self, data: QuotationResult) -> float:
+    def _calculate_score(
+        self,
+        data: QuotationResult,
+        schedule_score: float = 0.0,
+        has_schedule_data: bool = False
+    ) -> float:
         """
         Calculate comparison score (lower is better).
 
-        Primary factor: Price (80%)
-        Secondary factors: Timeline, Warranty (20%)
+        If schedule data present:
+            - Price: 60%
+            - Schedule Match: 20%
+            - Timeline: 10%
+            - Warranty: 10%
+        
+        Without schedule data:
+            - Price: 80%
+            - Timeline: 10%
+            - Warranty: 10%
         """
         if not data.total_price:
             return float('inf')
 
-        # Price is primary factor (80%)
-        score = data.total_price * 0.8
+        if has_schedule_data:
+            # With schedule data: Price (60%), Schedule (20%), Timeline (10%), Warranty (10%)
+            score = data.total_price * 0.6
+            
+            # Better schedule match = lower score (invert: 1 - schedule_score)
+            # schedule_score ranges from 0 to 1
+            schedule_penalty = (1.0 - schedule_score) * data.total_price * 0.2
+            score += schedule_penalty
+            
+            # Faster timeline is better
+            if data.timeline_days:
+                timeline_factor = data.timeline_days / 30.0
+                score += (data.total_price * 0.1 * timeline_factor)
+            
+            # Longer warranty is better
+            if data.warranty_months:
+                warranty_factor = 12.0 / max(data.warranty_months, 1)
+                score += (data.total_price * 0.1 * warranty_factor)
+        else:
+            # Without schedule data: original scoring
+            score = data.total_price * 0.8
 
-        # Faster timeline is better (10%)
-        if data.timeline_days:
-            # Normalize: assume 30 days is baseline
-            timeline_factor = data.timeline_days / 30.0
-            score += (data.total_price * 0.1 * timeline_factor)
+            # Faster timeline is better (10%)
+            if data.timeline_days:
+                timeline_factor = data.timeline_days / 30.0
+                score += (data.total_price * 0.1 * timeline_factor)
 
-        # Longer warranty is better (10%) - inverse relationship
-        if data.warranty_months:
-            # Normalize: assume 12 months is baseline
-            warranty_factor = 12.0 / max(data.warranty_months, 1)
-            score += (data.total_price * 0.1 * warranty_factor)
+            # Longer warranty is better (10%)
+            if data.warranty_months:
+                warranty_factor = 12.0 / max(data.warranty_months, 1)
+                score += (data.total_price * 0.1 * warranty_factor)
 
         return score
 
@@ -286,7 +369,8 @@ class QuotationService:
 
     def _generate_recommendation(
         self,
-        scored: List[tuple]
+        scored: List[tuple],
+        has_schedule_data: bool = False
     ) -> Dict[str, Any]:
         """Generate recommendation based on scores."""
         if not scored or scored[0][1] == float('inf'):
@@ -302,8 +386,11 @@ class QuotationService:
 
         # Build reason
         reasons = []
-        reasons.append(f"Lowest price at ${best_data.total_price:.2f}")
+        reasons.append(f"Best price at ${best_data.total_price:.2f}")
 
+        if has_schedule_data and best.matching_slots:
+            reasons.append(f"{len(best.matching_slots)} matching time slot(s)")
+        
         if best_data.timeline_days:
             reasons.append(f"{best_data.timeline_days} days timeline")
         if best_data.warranty_months:
@@ -314,12 +401,15 @@ class QuotationService:
             "recommended_vendor_name": best.vendor_name,
             "total_price": best_data.total_price,
             "reason": " | ".join(reasons),
-            "confidence": best_data.confidence
+            "confidence": best_data.confidence,
+            "schedule_score": best.schedule_score,
+            "matching_slots": [s.to_dict() for s in best.matching_slots]
         }
 
     def _identify_red_flags(
         self,
-        quotations: List[VendorQuotation]
+        quotations: List[VendorQuotation],
+        user_slots: Optional[List[TimeSlot]] = None
     ) -> List[str]:
         """Identify potential red flags in quotations."""
         red_flags = []
@@ -343,6 +433,13 @@ class QuotationService:
 
             else:
                 red_flags.append(f"{q.vendor_name}: Could not extract price")
+            
+            # Check schedule compatibility
+            if user_slots and q.available_slots:
+                if not q.matching_slots:
+                    red_flags.append(f"{q.vendor_name}: No matching time slots with your availability")
+                elif len(q.matching_slots) == 1:
+                    red_flags.append(f"{q.vendor_name}: Only 1 matching time slot (limited flexibility)")
 
         # Check for suspiciously low prices (more than 40% below average)
         if len(prices) >= 2:
@@ -356,3 +453,49 @@ class QuotationService:
                         )
 
         return red_flags
+
+    def _generate_schedule_summary(
+        self,
+        quotations: List[VendorQuotation],
+        user_slots: Optional[List[TimeSlot]] = None
+    ) -> Dict[str, Any]:
+        """Generate schedule matching summary."""
+        if not user_slots:
+            return {
+                "schedule_considered": False,
+                "message": "No user availability provided"
+            }
+        
+        has_any_vendor_slots = any(q.available_slots for q in quotations)
+        if not has_any_vendor_slots:
+            return {
+                "schedule_considered": False,
+                "message": "No vendor availability provided"
+            }
+        
+        # Find best schedule match
+        best_schedule_vendor = None
+        best_match_count = 0
+        perfect_match_vendors = []
+        no_match_vendors = []
+        
+        for q in quotations:
+            match_count = len(q.matching_slots)
+            if match_count > best_match_count:
+                best_match_count = match_count
+                best_schedule_vendor = q.vendor_name
+            
+            if match_count == len(user_slots):
+                perfect_match_vendors.append(q.vendor_name)
+            elif match_count == 0 and q.available_slots:
+                no_match_vendors.append(q.vendor_name)
+        
+        return {
+            "schedule_considered": True,
+            "user_slots_count": len(user_slots),
+            "best_schedule_match_vendor": best_schedule_vendor,
+            "best_match_count": best_match_count,
+            "perfect_match_vendors": perfect_match_vendors,
+            "no_match_vendors": no_match_vendors,
+            "message": f"Best schedule compatibility: {best_schedule_vendor} ({best_match_count} matching slots)"
+        }

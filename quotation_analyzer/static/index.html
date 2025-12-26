@@ -490,6 +490,215 @@
         .error-box.active {
             display: block;
         }
+
+        /* User Availability Section */
+        .user-availability {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-availability h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-availability h3::before {
+            content: '🗓️';
+            font-size: 1.4rem;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .time-slot-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            transition: border-color 0.3s;
+        }
+
+        .time-slot-card:hover {
+            border-color: #667eea;
+        }
+
+        .time-slot-card.filled {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .time-slot-card h4 {
+            color: #555;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .time-slot-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .time-slot-row .input-group {
+            flex: 1;
+            min-width: 100px;
+            margin-bottom: 0;
+        }
+
+        .time-slot-row input[type="date"],
+        .time-slot-row input[type="time"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+
+        .time-slot-row input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .time-slot-row label {
+            display: block;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        /* Vendor Time Slots */
+        .vendor-time-slots {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border: 2px dashed #667eea;
+        }
+
+        .vendor-time-slots h4 {
+            color: #667eea;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .vendor-time-slots h4::before {
+            content: '⏰ ';
+        }
+
+        .vendor-slots-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .vendor-slot {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .vendor-slot span {
+            font-size: 0.75rem;
+            color: #667eea;
+            font-weight: 600;
+            width: 60px;
+        }
+
+        .vendor-slot input {
+            flex: 1;
+            min-width: 80px;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .vendor-slot input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Schedule Summary in Results */
+        .schedule-summary {
+            background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .schedule-summary h3 {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .schedule-summary h3::before {
+            content: '📅 ';
+        }
+
+        .schedule-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .schedule-info-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .schedule-info-item .label {
+            font-size: 0.8rem;
+            opacity: 0.85;
+            margin-bottom: 5px;
+        }
+
+        .schedule-info-item .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* Schedule badge in rankings */
+        .schedule-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .schedule-badge.good {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .schedule-badge.partial {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .schedule-badge.none {
+            background: #ffebee;
+            color: #c62828;
+        }
     </style>
 </head>
 <body>
@@ -510,6 +719,67 @@
             <span class="method-badge method-ocr" id="method-badge">Using: OCR</span>
         </div>
 
+        <!-- User Availability Section -->
+        <div class="user-availability">
+            <h3>Your Available Times for Maintenance</h3>
+            <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">
+                Enter your preferred time slots when you're available for maintenance work (optional)
+            </p>
+            <div class="time-slots-grid">
+                <div class="time-slot-card" id="user-slot-1">
+                    <h4>Time Slot 1</h4>
+                    <div class="time-slot-row">
+                        <div class="input-group">
+                            <label>Date</label>
+                            <input type="date" id="user-date-1" onchange="updateSlotCard('user', 1)">
+                        </div>
+                        <div class="input-group">
+                            <label>From</label>
+                            <input type="time" id="user-start-1" onchange="updateSlotCard('user', 1)">
+                        </div>
+                        <div class="input-group">
+                            <label>To</label>
+                            <input type="time" id="user-end-1" onchange="updateSlotCard('user', 1)">
+                        </div>
+                    </div>
+                </div>
+                <div class="time-slot-card" id="user-slot-2">
+                    <h4>Time Slot 2</h4>
+                    <div class="time-slot-row">
+                        <div class="input-group">
+                            <label>Date</label>
+                            <input type="date" id="user-date-2" onchange="updateSlotCard('user', 2)">
+                        </div>
+                        <div class="input-group">
+                            <label>From</label>
+                            <input type="time" id="user-start-2" onchange="updateSlotCard('user', 2)">
+                        </div>
+                        <div class="input-group">
+                            <label>To</label>
+                            <input type="time" id="user-end-2" onchange="updateSlotCard('user', 2)">
+                        </div>
+                    </div>
+                </div>
+                <div class="time-slot-card" id="user-slot-3">
+                    <h4>Time Slot 3</h4>
+                    <div class="time-slot-row">
+                        <div class="input-group">
+                            <label>Date</label>
+                            <input type="date" id="user-date-3" onchange="updateSlotCard('user', 3)">
+                        </div>
+                        <div class="input-group">
+                            <label>From</label>
+                            <input type="time" id="user-start-3" onchange="updateSlotCard('user', 3)">
+                        </div>
+                        <div class="input-group">
+                            <label>To</label>
+                            <input type="time" id="user-end-3" onchange="updateSlotCard('user', 3)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Upload Cards -->
         <div class="upload-grid">
             <div class="upload-card">
@@ -517,6 +787,30 @@
                 <div class="input-group">
                     <label>Vendor Name</label>
                     <input type="text" id="vendor1-name" placeholder="e.g., ABC Plumbing Co.">
+                </div>
+                <!-- Vendor 1 Time Slots -->
+                <div class="vendor-time-slots">
+                    <h4>Vendor's Available Times</h4>
+                    <div class="vendor-slots-container">
+                        <div class="vendor-slot">
+                            <span>Slot 1:</span>
+                            <input type="date" id="v1-date-1" placeholder="Date">
+                            <input type="time" id="v1-start-1" placeholder="From">
+                            <input type="time" id="v1-end-1" placeholder="To">
+                        </div>
+                        <div class="vendor-slot">
+                            <span>Slot 2:</span>
+                            <input type="date" id="v1-date-2" placeholder="Date">
+                            <input type="time" id="v1-start-2" placeholder="From">
+                            <input type="time" id="v1-end-2" placeholder="To">
+                        </div>
+                        <div class="vendor-slot">
+                            <span>Slot 3:</span>
+                            <input type="date" id="v1-date-3" placeholder="Date">
+                            <input type="time" id="v1-start-3" placeholder="From">
+                            <input type="time" id="v1-end-3" placeholder="To">
+                        </div>
+                    </div>
                 </div>
                 <div class="upload-zone" onclick="document.getElementById('file1').click()">
                     <input type="file" id="file1" accept="image/*" onchange="handleFileSelect(1, this)">
@@ -532,6 +826,30 @@
                     <label>Vendor Name</label>
                     <input type="text" id="vendor2-name" placeholder="e.g., QuickFix Services">
                 </div>
+                <!-- Vendor 2 Time Slots -->
+                <div class="vendor-time-slots">
+                    <h4>Vendor's Available Times</h4>
+                    <div class="vendor-slots-container">
+                        <div class="vendor-slot">
+                            <span>Slot 1:</span>
+                            <input type="date" id="v2-date-1" placeholder="Date">
+                            <input type="time" id="v2-start-1" placeholder="From">
+                            <input type="time" id="v2-end-1" placeholder="To">
+                        </div>
+                        <div class="vendor-slot">
+                            <span>Slot 2:</span>
+                            <input type="date" id="v2-date-2" placeholder="Date">
+                            <input type="time" id="v2-start-2" placeholder="From">
+                            <input type="time" id="v2-end-2" placeholder="To">
+                        </div>
+                        <div class="vendor-slot">
+                            <span>Slot 3:</span>
+                            <input type="date" id="v2-date-3" placeholder="Date">
+                            <input type="time" id="v2-start-3" placeholder="From">
+                            <input type="time" id="v2-end-3" placeholder="To">
+                        </div>
+                    </div>
+                </div>
                 <div class="upload-zone" onclick="document.getElementById('file2').click()">
                     <input type="file" id="file2" accept="image/*" onchange="handleFileSelect(2, this)">
                     <div class="upload-icon">📄</div>
@@ -545,6 +863,30 @@
                 <div class="input-group">
                     <label>Vendor Name</label>
                     <input type="text" id="vendor3-name" placeholder="e.g., ProRepair Ltd.">
+                </div>
+                <!-- Vendor 3 Time Slots -->
+                <div class="vendor-time-slots">
+                    <h4>Vendor's Available Times</h4>
+                    <div class="vendor-slots-container">
+                        <div class="vendor-slot">
+                            <span>Slot 1:</span>
+                            <input type="date" id="v3-date-1" placeholder="Date">
+                            <input type="time" id="v3-start-1" placeholder="From">
+                            <input type="time" id="v3-end-1" placeholder="To">
+                        </div>
+                        <div class="vendor-slot">
+                            <span>Slot 2:</span>
+                            <input type="date" id="v3-date-2" placeholder="Date">
+                            <input type="time" id="v3-start-2" placeholder="From">
+                            <input type="time" id="v3-end-2" placeholder="To">
+                        </div>
+                        <div class="vendor-slot">
+                            <span>Slot 3:</span>
+                            <input type="date" id="v3-date-3" placeholder="Date">
+                            <input type="time" id="v3-start-3" placeholder="From">
+                            <input type="time" id="v3-end-3" placeholder="To">
+                        </div>
+                    </div>
                 </div>
                 <div class="upload-zone" onclick="document.getElementById('file3').click()">
                     <input type="file" id="file3" accept="image/*" onchange="handleFileSelect(3, this)">
@@ -584,6 +926,12 @@
                 <div class="winner" id="winner-name">-</div>
                 <div class="price" id="winner-price">-</div>
                 <div class="reason" id="winner-reason">-</div>
+            </div>
+
+            <!-- Schedule Summary -->
+            <div class="schedule-summary" id="schedule-summary" style="display:none;">
+                <h3>Schedule Compatibility</h3>
+                <div class="schedule-info" id="schedule-info"></div>
             </div>
 
             <!-- Rankings -->
@@ -637,6 +985,61 @@
 
         // Initialize
         ocrLabel.classList.add('active');
+
+        // Update time slot card visual state
+        function updateSlotCard(type, slotNum) {
+            const prefix = type === 'user' ? 'user' : `v${slotNum}`;
+            const date = document.getElementById(`${prefix}-date-${slotNum}`);
+            const start = document.getElementById(`${prefix}-start-${slotNum}`);
+            const end = document.getElementById(`${prefix}-end-${slotNum}`);
+            
+            if (type === 'user') {
+                const card = document.getElementById(`user-slot-${slotNum}`);
+                if (date.value && start.value && end.value) {
+                    card.classList.add('filled');
+                } else {
+                    card.classList.remove('filled');
+                }
+            }
+        }
+
+        // Get user time slots
+        function getUserTimeSlots() {
+            const slots = [];
+            for (let i = 1; i <= 3; i++) {
+                const date = document.getElementById(`user-date-${i}`).value;
+                const start = document.getElementById(`user-start-${i}`).value;
+                const end = document.getElementById(`user-end-${i}`).value;
+                
+                if (date && start && end) {
+                    slots.push({
+                        date: date,
+                        start_time: start,
+                        end_time: end
+                    });
+                }
+            }
+            return slots.length > 0 ? slots : null;
+        }
+
+        // Get vendor time slots
+        function getVendorTimeSlots(vendorNum) {
+            const slots = [];
+            for (let i = 1; i <= 3; i++) {
+                const date = document.getElementById(`v${vendorNum}-date-${i}`).value;
+                const start = document.getElementById(`v${vendorNum}-start-${i}`).value;
+                const end = document.getElementById(`v${vendorNum}-end-${i}`).value;
+                
+                if (date && start && end) {
+                    slots.push({
+                        date: date,
+                        start_time: start,
+                        end_time: end
+                    });
+                }
+            }
+            return slots.length > 0 ? slots : null;
+        }
 
         // File handling
         function handleFileSelect(num, input) {
@@ -695,15 +1098,31 @@
                     fileToBase64(files[3])
                 ]);
 
+                // Get time slots
+                const userSlots = getUserTimeSlots();
+                const vendor1Slots = getVendorTimeSlots(1);
+                const vendor2Slots = getVendorTimeSlots(2);
+                const vendor3Slots = getVendorTimeSlots(3);
+
+                // Build quotations with time slots
+                const quotation1 = { vendor_id: 'V1', vendor_name: vendor1Name, image: img1 };
+                const quotation2 = { vendor_id: 'V2', vendor_name: vendor2Name, image: img2 };
+                const quotation3 = { vendor_id: 'V3', vendor_name: vendor3Name, image: img3 };
+
+                if (vendor1Slots) quotation1.available_slots = vendor1Slots;
+                if (vendor2Slots) quotation2.available_slots = vendor2Slots;
+                if (vendor3Slots) quotation3.available_slots = vendor3Slots;
+
                 // Build request
                 const request = {
                     use_llm: llmToggle.checked,
-                    quotations: [
-                        { vendor_id: 'V1', vendor_name: vendor1Name, image: img1 },
-                        { vendor_id: 'V2', vendor_name: vendor2Name, image: img2 },
-                        { vendor_id: 'V3', vendor_name: vendor3Name, image: img3 }
-                    ]
+                    quotations: [quotation1, quotation2, quotation3]
                 };
+
+                // Add user slots if provided
+                if (userSlots) {
+                    request.user_available_slots = userSlots;
+                }
 
                 // Call API
                 const response = await fetch('/compare', {
@@ -750,17 +1169,60 @@
                 : '-';
             document.getElementById('winner-reason').textContent = rec.reason || '';
 
+            // Schedule Summary
+            const scheduleSummary = data.schedule_summary;
+            const scheduleSummaryDiv = document.getElementById('schedule-summary');
+            const scheduleInfoDiv = document.getElementById('schedule-info');
+            
+            if (scheduleSummary && scheduleSummary.schedule_considered) {
+                scheduleSummaryDiv.style.display = 'block';
+                scheduleInfoDiv.innerHTML = `
+                    <div class="schedule-info-item">
+                        <div class="label">Your Time Slots</div>
+                        <div class="value">${scheduleSummary.user_slots_count || 0}</div>
+                    </div>
+                    <div class="schedule-info-item">
+                        <div class="label">Best Schedule Match</div>
+                        <div class="value">${scheduleSummary.best_schedule_match_vendor || '-'}</div>
+                    </div>
+                    <div class="schedule-info-item">
+                        <div class="label">Matching Slots</div>
+                        <div class="value">${scheduleSummary.best_match_count || 0} slots</div>
+                    </div>
+                    ${scheduleSummary.perfect_match_vendors && scheduleSummary.perfect_match_vendors.length > 0 ? `
+                    <div class="schedule-info-item">
+                        <div class="label">Perfect Match</div>
+                        <div class="value">✅ ${scheduleSummary.perfect_match_vendors.join(', ')}</div>
+                    </div>
+                    ` : ''}
+                `;
+            } else {
+                scheduleSummaryDiv.style.display = 'none';
+            }
+
             // Rankings
             const rankingsList = document.getElementById('rankings-list');
             rankingsList.innerHTML = '';
 
             data.ranked_vendors.forEach(vendor => {
+                // Determine schedule badge
+                let scheduleBadge = '';
+                if (vendor.matching_slots_count !== undefined && vendor.available_slots && vendor.available_slots.length > 0) {
+                    if (vendor.matching_slots_count >= 2) {
+                        scheduleBadge = `<span class="schedule-badge good">✓ ${vendor.matching_slots_count} matches</span>`;
+                    } else if (vendor.matching_slots_count === 1) {
+                        scheduleBadge = `<span class="schedule-badge partial">⚠ 1 match</span>`;
+                    } else {
+                        scheduleBadge = `<span class="schedule-badge none">✗ No match</span>`;
+                    }
+                }
+
                 const item = document.createElement('div');
                 item.className = `ranking-item ${vendor.rank === 1 ? 'first' : ''}`;
                 item.innerHTML = `
                     <div class="rank-badge rank-${vendor.rank}">${vendor.rank}</div>
                     <div class="vendor-info">
-                        <div class="name">${vendor.vendor_name}</div>
+                        <div class="name">${vendor.vendor_name}${scheduleBadge}</div>
                         <div class="details">
                             ${vendor.timeline_days ? `${vendor.timeline_days} days` : 'No timeline'} |
                             ${vendor.warranty_months ? `${vendor.warranty_months}mo warranty` : 'No warranty'} |
