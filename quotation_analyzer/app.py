@@ -51,14 +51,36 @@ class AnalyzeResponse(BaseModel):
     errors: List[str]
 
 
+class TimeSlotRequest(BaseModel):
+    """A time slot for maintenance availability."""
+    date: str = Field(..., description="Date in YYYY-MM-DD format")
+    start_time: str = Field(..., description="Start time in HH:MM format (24-hour)")
+    end_time: str = Field(..., description="End time in HH:MM format (24-hour)")
+
+
+class QuotationWithSlots(BaseModel):
+    """A quotation with vendor availability slots."""
+    vendor_id: str = Field(..., description="Unique vendor ID")
+    vendor_name: str = Field(..., description="Vendor company name")
+    image: str = Field(..., description="Base64 encoded image or data URI")
+    available_slots: Optional[List[TimeSlotRequest]] = Field(
+        default=None,
+        description="Vendor's 3 available time slots for maintenance"
+    )
+
+
 class CompareRequest(BaseModel):
     """Request to compare 3 vendor quotations."""
     use_llm: bool = Field(False, description="Use LLM (True) or OCR (False)")
     quotations: List[dict] = Field(
         ...,
-        description="List of 3 quotations with vendor_id, vendor_name, and image",
+        description="List of 3 quotations with vendor_id, vendor_name, image, and optional available_slots",
         min_length=3,
         max_length=3
+    )
+    user_available_slots: Optional[List[TimeSlotRequest]] = Field(
+        default=None,
+        description="User's available time slots for maintenance"
     )
 
 
@@ -71,6 +93,7 @@ class CompareResponse(BaseModel):
     red_flags: List[str]
     overall_confidence: float
     processed_at: str
+    schedule_summary: Optional[dict] = None
 
 
 class HealthResponse(BaseModel):
@@ -201,10 +224,13 @@ async def compare_quotations(request: CompareRequest):
         - `vendor_id`: Unique vendor ID
         - `vendor_name`: Company name
         - `image`: Base64 encoded image or data URI
+        - `available_slots`: Optional list of 3 time slots (vendor availability)
+    - `user_available_slots`: Optional list of user's available time slots
 
     **Returns:**
     - Ranked vendors (1st = recommended)
     - Comparison summary (lowest price, fastest timeline, etc.)
+    - Schedule summary (if time slots provided)
     - Recommendation with reasoning
     - Red flags (if any)
 
@@ -212,10 +238,22 @@ async def compare_quotations(request: CompareRequest):
     ```json
     {
         "use_llm": false,
+        "user_available_slots": [
+            {"date": "2024-12-28", "start_time": "09:00", "end_time": "12:00"},
+            {"date": "2024-12-29", "start_time": "14:00", "end_time": "18:00"}
+        ],
         "quotations": [
-            {"vendor_id": "V1", "vendor_name": "Vendor A", "image": "data:image/png;base64,..."},
-            {"vendor_id": "V2", "vendor_name": "Vendor B", "image": "data:image/png;base64,..."},
-            {"vendor_id": "V3", "vendor_name": "Vendor C", "image": "data:image/png;base64,..."}
+            {
+                "vendor_id": "V1",
+                "vendor_name": "Vendor A",
+                "image": "data:image/png;base64,...",
+                "available_slots": [
+                    {"date": "2024-12-28", "start_time": "08:00", "end_time": "11:00"},
+                    {"date": "2024-12-29", "start_time": "13:00", "end_time": "17:00"},
+                    {"date": "2024-12-30", "start_time": "09:00", "end_time": "15:00"}
+                ]
+            },
+            ...
         ]
     }
     ```
@@ -224,8 +262,19 @@ async def compare_quotations(request: CompareRequest):
         # Set extraction method
         quotation_service.set_extraction_method(request.use_llm)
 
+        # Convert user slots to dict format
+        user_slots = None
+        if request.user_available_slots:
+            user_slots = [
+                {"date": s.date, "start_time": s.start_time, "end_time": s.end_time}
+                for s in request.user_available_slots
+            ]
+
         # Compare
-        result = await quotation_service.analyze_and_compare(request.quotations)
+        result = await quotation_service.analyze_and_compare(
+            request.quotations,
+            user_available_slots=user_slots
+        )
 
         return {
             "extraction_method": result.extraction_method.value,
@@ -234,7 +283,8 @@ async def compare_quotations(request: CompareRequest):
             "summary": result.summary,
             "red_flags": result.red_flags,
             "overall_confidence": result.overall_confidence,
-            "processed_at": result.processed_at.isoformat()
+            "processed_at": result.processed_at.isoformat(),
+            "schedule_summary": result.schedule_summary
         }
 
     except ValueError as e:
@@ -251,7 +301,13 @@ async def upload_and_compare(
     vendor3_name: str = Form(...),
     image1: UploadFile = File(...),
     image2: UploadFile = File(...),
-    image3: UploadFile = File(...)
+    image3: UploadFile = File(...),
+    # User available slots (JSON strings)
+    user_slots_json: Optional[str] = Form(None),
+    # Vendor available slots (JSON strings)
+    vendor1_slots_json: Optional[str] = Form(None),
+    vendor2_slots_json: Optional[str] = Form(None),
+    vendor3_slots_json: Optional[str] = Form(None)
 ):
     """
     Upload 3 quotation images and compare them.
@@ -262,16 +318,36 @@ async def upload_and_compare(
     - `use_llm`: Toggle - true for LLM, false for OCR
     - `vendor1_name`, `vendor2_name`, `vendor3_name`: Vendor names
     - `image1`, `image2`, `image3`: Quotation image files
+    - `user_slots_json`: JSON string of user's available time slots
+    - `vendor1_slots_json`, `vendor2_slots_json`, `vendor3_slots_json`: JSON strings of vendor time slots
     """
     import base64
+    import json
 
     try:
+        # Parse user slots
+        user_slots = None
+        if user_slots_json:
+            try:
+                user_slots = json.loads(user_slots_json)
+            except json.JSONDecodeError:
+                pass
+
+        # Parse vendor slots
+        vendor_slots = [None, None, None]
+        for i, slots_json in enumerate([vendor1_slots_json, vendor2_slots_json, vendor3_slots_json]):
+            if slots_json:
+                try:
+                    vendor_slots[i] = json.loads(slots_json)
+                except json.JSONDecodeError:
+                    pass
+
         # Read and encode images
         quotations = []
-        for i, (name, file) in enumerate([
-            (vendor1_name, image1),
-            (vendor2_name, image2),
-            (vendor3_name, image3)
+        for i, (name, file, slots) in enumerate([
+            (vendor1_name, image1, vendor_slots[0]),
+            (vendor2_name, image2, vendor_slots[1]),
+            (vendor3_name, image3, vendor_slots[2])
         ], 1):
             content = await file.read()
             b64 = base64.b64encode(content).decode('utf-8')
@@ -284,17 +360,25 @@ async def upload_and_compare(
             else:
                 mime = "image/png"
 
-            quotations.append({
+            quotation = {
                 "vendor_id": f"V{i}",
                 "vendor_name": name,
                 "image": f"data:{mime};base64,{b64}"
-            })
+            }
+            
+            if slots:
+                quotation["available_slots"] = slots
+            
+            quotations.append(quotation)
 
         # Set extraction method
         quotation_service.set_extraction_method(use_llm)
 
         # Compare
-        result = await quotation_service.analyze_and_compare(quotations)
+        result = await quotation_service.analyze_and_compare(
+            quotations,
+            user_available_slots=user_slots
+        )
 
         return {
             "extraction_method": result.extraction_method.value,
@@ -303,7 +387,8 @@ async def upload_and_compare(
             "summary": result.summary,
             "red_flags": result.red_flags,
             "overall_confidence": result.overall_confidence,
-            "processed_at": result.processed_at.isoformat()
+            "processed_at": result.processed_at.isoformat(),
+            "schedule_summary": result.schedule_summary
         }
 
     except ValueError as e:
