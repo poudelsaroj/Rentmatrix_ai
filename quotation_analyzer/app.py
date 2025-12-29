@@ -29,6 +29,17 @@ if str(ROOT_DIR) not in sys.path:
 
 from quotation_analyzer.quotation_service import QuotationService
 from quotation_analyzer.models import ExtractionMethod
+from quotation_analyzer.mock_data import (
+    MOCK_USERS,
+    MOCK_VENDORS_FOR_QUOTATION,
+    MOCK_MAINTENANCE_REQUESTS,
+    create_mock_user_availability,
+    create_mock_quotation_results,
+    create_mock_vendor_quotations,
+    create_mock_comparison_request,
+    create_mock_comparison_result,
+    get_all_mock_data
+)
 
 
 # ==================== Request/Response Models ====================
@@ -397,6 +408,119 @@ async def upload_and_compare(
         raise HTTPException(500, f"Comparison failed: {str(e)}")
 
 
+# ==================== Mock Data Endpoints ====================
+
+@app.get("/mock/users")
+async def get_mock_users():
+    """Get all mock users."""
+    return {"users": MOCK_USERS}
+
+
+@app.get("/mock/users/{user_id}")
+async def get_mock_user_by_id(user_id: str):
+    """Get a specific mock user by ID."""
+    for user in MOCK_USERS:
+        if user["user_id"] == user_id:
+            return user
+    raise HTTPException(404, f"User {user_id} not found")
+
+
+@app.get("/mock/users/{user_id}/availability")
+async def get_mock_user_availability(user_id: str):
+    """Get mock availability for a specific user."""
+    availability = create_mock_user_availability()
+    if user_id in availability:
+        return {"user_id": user_id, "available_slots": availability[user_id]}
+    raise HTTPException(404, f"Availability for user {user_id} not found")
+
+
+@app.get("/mock/vendors")
+async def get_mock_vendors():
+    """Get all mock vendors for quotation."""
+    return {"vendors": MOCK_VENDORS_FOR_QUOTATION}
+
+
+@app.get("/mock/vendors/{vendor_id}")
+async def get_mock_vendor_by_id(vendor_id: str):
+    """Get a specific mock vendor by ID."""
+    for vendor in MOCK_VENDORS_FOR_QUOTATION:
+        if vendor["vendor_id"] == vendor_id:
+            return vendor
+    raise HTTPException(404, f"Vendor {vendor_id} not found")
+
+
+@app.get("/mock/maintenance-requests")
+async def get_mock_maintenance_requests():
+    """Get all mock maintenance requests."""
+    return {"requests": MOCK_MAINTENANCE_REQUESTS}
+
+
+@app.get("/mock/quotations")
+async def get_mock_quotations():
+    """Get mock quotation results (extracted data from sample images)."""
+    results = create_mock_quotation_results()
+    return {"quotations": [r.to_dict() for r in results]}
+
+
+@app.get("/mock/vendor-quotations")
+async def get_mock_vendor_quotations():
+    """Get mock vendor quotations with time slots."""
+    quotations = create_mock_vendor_quotations()
+    return {"vendor_quotations": [q.to_dict() for q in quotations]}
+
+
+@app.get("/mock/comparison-request")
+async def get_mock_comparison_request(user_id: str = "USR-001"):
+    """
+    Get a sample comparison request payload for testing.
+
+    This returns a complete request body that can be sent to /compare endpoint.
+    """
+    return create_mock_comparison_request(user_id)
+
+
+@app.get("/mock/comparison-result")
+async def get_mock_comparison_result():
+    """
+    Get a sample comparison result for testing/demo purposes.
+
+    This shows what a complete comparison result looks like without
+    actually running the extraction.
+    """
+    result = create_mock_comparison_result()
+    return result.to_dict()
+
+
+@app.get("/mock/all")
+async def get_all_mock_data_endpoint():
+    """Get all mock data in a single response."""
+    return get_all_mock_data()
+
+
+@app.post("/mock/compare")
+async def mock_compare_quotations():
+    """
+    Run a comparison using mock data.
+
+    This endpoint uses the pre-defined mock data instead of actual image extraction.
+    Useful for testing the frontend without requiring image processing.
+    """
+    try:
+        result = create_mock_comparison_result()
+        return {
+            "extraction_method": result.extraction_method.value,
+            "ranked_vendors": result.ranked_vendors,
+            "recommendation": result.recommendation,
+            "summary": result.summary,
+            "red_flags": result.red_flags,
+            "overall_confidence": result.overall_confidence,
+            "processed_at": result.processed_at.isoformat(),
+            "schedule_summary": result.schedule_summary
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Mock comparison failed: {str(e)}")
+
+
 if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("QUOTATION ANALYZER API")
@@ -407,6 +531,12 @@ if __name__ == "__main__":
     print("\nToggle Options:")
     print("  - use_llm=false : Use Tesseract OCR (default)")
     print("  - use_llm=true  : Use gpt-5 Vision (LLM)")
+    print("\nMock Data Endpoints:")
+    print("  - GET /mock/users          : All mock users")
+    print("  - GET /mock/vendors        : All mock vendors")
+    print("  - GET /mock/quotations     : Mock quotation results")
+    print("  - POST /mock/compare       : Run mock comparison")
+    print("  - GET /mock/all            : All mock data")
     print("=" * 60 + "\n")
 
     uvicorn.run(

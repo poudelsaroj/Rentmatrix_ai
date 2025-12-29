@@ -902,6 +902,12 @@
             <button class="submit-btn" onclick="analyzeQuotations()">
                 Analyze & Compare Quotations
             </button>
+            <button class="submit-btn" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); margin-left: 15px;" onclick="loadMockData()">
+                Load Mock Data (Demo)
+            </button>
+            <button class="submit-btn" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); margin-left: 15px;" onclick="runMockComparison()">
+                Run Mock Comparison
+            </button>
         </div>
 
         <!-- Error Box -->
@@ -1292,6 +1298,83 @@
 
         function hideError() {
             document.getElementById('error-box').classList.remove('active');
+        }
+
+        // Load mock data for demo
+        async function loadMockData() {
+            try {
+                // Fetch mock comparison request from API
+                const response = await fetch('/mock/comparison-request?user_id=USR-001');
+                if (!response.ok) throw new Error('Failed to load mock data');
+
+                const data = await response.json();
+
+                // Fill vendor names
+                document.getElementById('vendor1-name').value = data.quotations[0].vendor_name;
+                document.getElementById('vendor2-name').value = data.quotations[1].vendor_name;
+                document.getElementById('vendor3-name').value = data.quotations[2].vendor_name;
+
+                // Fill user time slots
+                if (data.user_available_slots) {
+                    for (let i = 0; i < Math.min(3, data.user_available_slots.length); i++) {
+                        const slot = data.user_available_slots[i];
+                        document.getElementById(`user-date-${i + 1}`).value = slot.date;
+                        document.getElementById(`user-start-${i + 1}`).value = slot.start_time;
+                        document.getElementById(`user-end-${i + 1}`).value = slot.end_time;
+                        updateSlotCard('user', i + 1);
+                    }
+                }
+
+                // Fill vendor time slots
+                for (let v = 0; v < 3; v++) {
+                    const vendorSlots = data.quotations[v].available_slots;
+                    if (vendorSlots) {
+                        for (let i = 0; i < Math.min(3, vendorSlots.length); i++) {
+                            const slot = vendorSlots[i];
+                            document.getElementById(`v${v + 1}-date-${i + 1}`).value = slot.date;
+                            document.getElementById(`v${v + 1}-start-${i + 1}`).value = slot.start_time;
+                            document.getElementById(`v${v + 1}-end-${i + 1}`).value = slot.end_time;
+                        }
+                    }
+                }
+
+                // Fetch and display mock images
+                const vendorQuotations = await fetch('/mock/vendor-quotations');
+                const vqData = await vendorQuotations.json();
+
+                // Note: Images from sample_images folder are used via the mock API
+                alert('Mock data loaded! Vendor names and time slots have been filled.\n\nNote: For full demo, click "Run Mock Comparison" to see results without uploading images.');
+
+            } catch (error) {
+                showError('Failed to load mock data: ' + error.message);
+            }
+        }
+
+        // Run mock comparison without actual image upload
+        async function runMockComparison() {
+            hideError();
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').classList.remove('active');
+
+            try {
+                const response = await fetch('/mock/compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Mock comparison failed');
+                }
+
+                const result = await response.json();
+                displayResults(result);
+
+            } catch (error) {
+                showError('Mock comparison error: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
         }
     </script>
 </body>

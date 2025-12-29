@@ -4,7 +4,9 @@
       "WebFetch(domain:open-meteo.com)",
       "Bash(python:*)",
       "Bash(timeout:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(dir:*)",
+      "Bash(wc:*)"
     ]
   }
 }
